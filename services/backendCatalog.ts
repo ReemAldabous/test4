@@ -229,17 +229,11 @@ export async function fetchMedicinesCatalog(
   });
   if (search) params.set("name", search);
 
-  const medicines = await getAllPageContent<ApiMedicineDto>(
-    (page) => {
-      const pageParams = new URLSearchParams(params);
-      pageParams.set("page", String(page));
-      return `/medicines?${pageParams}`;
-    },
-    size,
-    token,
-  );
+  const response = await apiRequest<
+    ApiPageResponse<ApiMedicineDto> | ApiMedicineDto[]
+  >(`/medicines?${params}`, {}, token);
 
-  return medicines.map(mapMedicine);
+  return getPageContent(response).map(mapMedicine);
 }
 
 export async function fetchPharmaciesForMedicine(
