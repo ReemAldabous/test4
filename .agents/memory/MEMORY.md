@@ -1,0 +1,2 @@
+- [Backend dose schedule contract](backend-schedule-contract.md) — expose persisted scheduled datetimes; never rebuild dose timing in the client.
+- [Expo dependency install](expo-dependency-install.md) — preview setup can be blocked by the Replit package firewall before Expo is available.
