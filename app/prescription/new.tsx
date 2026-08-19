@@ -463,8 +463,6 @@ export default function NewPrescriptionScreen() {
 
   // ── Step 3: details ──
   const [startDate, setStartDate] = useState(todayStr());
-  const [hasEndDate, setHasEndDate] = useState(false);
-  const [endDate, setEndDate] = useState("");
   const [byDoctor, setByDoctor] = useState(false);
   const [doctorName, setDoctorName] = useState("");
   const [notes, setNotes] = useState("");
@@ -505,8 +503,6 @@ export default function NewPrescriptionScreen() {
         ? existing.startDate
         : `${existing.startDate}T08:00:00`,
     );
-    setHasEndDate(Boolean(existing.endDate));
-    setEndDate(existing.endDate ? existing.endDate.slice(0, 10) : "");
     setByDoctor(Boolean(existing.byDoctor));
     setDoctorName(existing.doctorName ?? existing.prescribedBy ?? "");
     setNotes(existing.note ?? existing.notes ?? "");
@@ -588,7 +584,7 @@ export default function NewPrescriptionScreen() {
         frequency,
         foodRequirement: foodReq,
         startDate,
-        ...(hasEndDate && endDate ? { endDate } : {}),
+        ...(existingRx?.endDate ? { endDate: existingRx.endDate } : {}),
         prescribedBy: byDoctor ? trimmedDoctor || "Doctor" : "Myself",
         byDoctor,
         ...(byDoctor && trimmedDoctor ? { doctorName: trimmedDoctor } : {}),
@@ -1017,71 +1013,6 @@ export default function NewPrescriptionScreen() {
                 icon="calendar"
                 colors={colors}
               />
-
-              <Pressable
-                onPress={() => {
-                  setHasEndDate((p) => !p);
-                  if (!hasEndDate) setEndDate("");
-                }}
-                style={({ pressed }) => [
-                  styles.toggleRow,
-                  {
-                    backgroundColor: hasEndDate
-                      ? colors.primary + "10"
-                      : colors.surfaceSecondary,
-                    borderColor: hasEndDate
-                      ? colors.primary + "40"
-                      : colors.border,
-                    opacity: pressed ? 0.75 : 1,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.toggleDot,
-                    {
-                      backgroundColor: hasEndDate
-                        ? colors.primary
-                        : colors.textMuted,
-                    },
-                  ]}
-                >
-                  {hasEndDate && (
-                    <Feather name="check" size={12} color="#fff" />
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.toggleLabel,
-                    {
-                      color: hasEndDate ? colors.primary : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {t("addEndDateOptional")}
-                </Text>
-              </Pressable>
-
-              {hasEndDate && (
-                <>
-                  <Text
-                    style={[
-                      styles.fieldLabel,
-                      { color: colors.textSecondary, marginTop: 10 },
-                    ]}
-                  >
-                    {t("endDateLabelForm")}
-                  </Text>
-                  <DateTimeField
-                    value={endDate}
-                    onChange={(iso: string) => setEndDate(iso.split("T")[0])}
-                    mode="date"
-                    placeholder="YYYY-MM-DD"
-                    icon="calendar"
-                    colors={colors}
-                  />
-                </>
-              )}
 
               <SectionHeader title={t("additionalDetails")} colors={colors} />
 
