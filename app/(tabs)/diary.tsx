@@ -1494,44 +1494,7 @@ export default function DiaryScreen() {
         onClose={() => setShowCalendar(false)}
       />
 
-      {/* ── vitals strip (selected day or today) ── */}
-      {todayMetrics.length > 0 && (
-        <View
-          style={[
-            styles.vitalsBar,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.borderLight,
-            },
-          ]}
-        >
-          <Text style={[styles.vitalsLabel, { color: colors.textMuted }]}>
-            {selectedDate && selectedDate !== todayStr
-              ? `Vitals — ${shortDate(selectedDate)}`
-              : "Today's vitals"}
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.vitalsScroll}
-          >
-            {todayMetrics.slice(0, 8).map((m) => {
-              const def = getMetricDef(m.type);
-              return (
-                <VitalsCard
-                  key={m.id}
-                  label={m.label}
-                  value={m.value}
-                  unit={m.unit}
-                  icon={m.icon}
-                  color={def?.color ?? colors.primary}
-                  colors={colors}
-                />
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
+   
 
       {/* ── timeline list ── */}
       <FlatList
@@ -1590,15 +1553,7 @@ export default function DiaryScreen() {
                   </Text>
                 </Pressable>
               )}
-              <Pressable
-                onPress={() => router.push("/diary/new")}
-                style={[styles.emptyBtn, { backgroundColor: colors.primary }]}
-              >
-                <Feather name="plus" size={16} color="#fff" />
-                <Text style={styles.emptyBtnText}>
-                  {selectedDate ? "Add Entry" : "Add Diary Entry"}
-                </Text>
-              </Pressable>
+              
             </View>
           </View>
         }

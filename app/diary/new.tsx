@@ -426,35 +426,8 @@ export default function NewDiaryEntryScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Date/Time row */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              When
-            </Text>
-            <View style={styles.dateTimeRow}>
-              <DateTimeField
-                value={date}
-                onChange={(iso: string) => setDate(iso.split("T")[0])}
-                mode="date"
-                placeholder="YYYY-MM-DD"
-                icon="calendar"
-                colors={colors}
-              />
-              <DateTimeField
-                value={
-                  time
-                    ? new Date(`${date}T${time}:00`).toISOString()
-                    : undefined
-                }
-                onChange={(iso: string) =>
-                  setTime(new Date(iso).toTimeString().slice(0, 5))
-                }
-                mode="time"
-                placeholder="HH:MM"
-                icon="clock"
-                colors={colors}
-              />
-            </View>
-          </View>
+       
+          
 
           {/* Mood */}
           <View style={styles.section}>
