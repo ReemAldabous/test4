@@ -149,16 +149,6 @@ async function getAllPageContent<T>(
   return items;
 }
 
-type ApiSymptomDefinitionDto = {
-  id: string;
-  name: string;
-  type: string;
-  unit?: string | null;
-  minValue?: number | null;
-  maxValue?: number | null;
-  description?: string | null;
-};
-
 type ApiSymptomMeasurementDto = {
   id: string;
   symptomId: string;
@@ -572,37 +562,6 @@ async function loadRemotePrescriptions(): Promise<Prescription[] | null> {
   }
 }
 
-async function loadRemoteSymptomDefinitions(): Promise<
-  SymptomDefinition[] | null
-> {
-  if (!isApiConfigured()) return null;
-
-  try {
-    const token = await getAuthToken();
-    const definitions = await requestApi<ApiSymptomDefinitionDto[]>(
-      "/symptoms/definitions",
-      {},
-      token,
-    );
-
-    return definitions.map((definition) => ({
-      id: definition.id,
-      name: definition.name,
-      type: definition.type as SymptomDefinition["type"],
-      unit: definition.unit ?? undefined,
-      minValue: definition.minValue ?? undefined,
-      maxValue: definition.maxValue ?? undefined,
-      description: definition.description ?? undefined,
-    }));
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return [];
-    }
-    console.warn("Failed to load symptom definitions from API:", error);
-    return null;
-  }
-}
-
 export async function saveAuthToken(token: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.AUTH_TOKEN, token);
 }
@@ -848,17 +807,10 @@ export async function getObservationSessions(): Promise<ObservationSession[]> {
   const patientId = await getStoredPatientId();
   if (!token || patientId == null) return [];
 
-  const [observationsPage, definitions] = await Promise.all([
-    getAllPageContent<ApiObservationDto>(
-      (page) => `/patients/${patientId}/observations?page=${page}&size=500`,
-      500,
-      token,
-    ),
-    loadRemoteSymptomDefinitions(),
-  ]);
-
-  const definitionsById = new Map<string, SymptomDefinition>(
-    (definitions ?? []).map((definition) => [definition.id, definition]),
+  const observationsPage = await getAllPageContent<ApiObservationDto>(
+    (page) => `/patients/${patientId}/observations?page=${page}&size=500`,
+    500,
+    token,
   );
 
   const bySession = new Map<string, ObservationSession>();
@@ -867,7 +819,7 @@ export async function getObservationSessions(): Promise<ObservationSession[]> {
       item.symptomType,
       item.measurementUnit,
     );
-    const symptomDefinition = definitionsById.get(symptomDefinitionId) ?? {
+    const symptomDefinition = {
       id: symptomDefinitionId,
       name: item.symptomType,
       type: inferSymptomTypeFromObservation(item),
@@ -1157,6 +1109,5 @@ export async function deleteDiaryEntry(entryId: string): Promise<void> {
 }
 
 export async function getSymptomDefinitions(): Promise<SymptomDefinition[]> {
-  const remote = await loadRemoteSymptomDefinitions();
-  return remote ?? [];
+  return [];
 }
