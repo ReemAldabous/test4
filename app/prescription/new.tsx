@@ -20,6 +20,7 @@ import Colors from "@/constants/colors";
 import DateTimeField from "@/components/ui/DateTimeField";
 import { useApp } from "@/context/AppContext";
 import type { Medicine, Prescription } from "@/models";
+import type { TranslationKey } from "@/lib/i18n";
 import {
   fetchMedicinesCatalog,
   type SearchableMedicine,
@@ -67,6 +68,56 @@ const TIME_PRESETS = [
   "21:00",
   "22:00",
 ];
+
+const frequencyLabelKeys: Record<string, TranslationKey> = {
+  "Once daily": "onceDaily",
+  "Twice daily": "twiceDaily",
+  "Three times daily": "threeTimesDaily",
+  "Four times daily": "fourTimesDaily",
+  "As needed": "asNeeded",
+  Weekly: "weekly",
+};
+
+const foodLabelKeys: Record<string, TranslationKey> = {
+  before_meal: "beforeMeal",
+  after_meal: "afterMeal",
+  with_meal: "withMeal",
+  any_time: "anyTime",
+};
+
+const timeLabelKeys: TranslationKey[] = [
+  "morningDose",
+  "middayDose",
+  "afternoonDose",
+  "eveningDose",
+];
+
+function localizedFrequency(value: string, t: (key: TranslationKey) => string) {
+  const key = frequencyLabelKeys[value];
+  return key ? t(key) : value;
+}
+
+function localizedFood(value: string, t: (key: TranslationKey) => string) {
+  const key = foodLabelKeys[value];
+  return key ? t(key) : value;
+}
+
+const dosageFormLabelKeys: Record<string, TranslationKey> = {
+  tablet: "dosageTablet",
+  capsule: "dosageCapsule",
+  syrup: "dosageSyrup",
+  injection: "dosageInjection",
+  cream: "dosageCream",
+  drops: "dosageDrops",
+};
+
+function localizedDosageForm(
+  value: string,
+  t: (key: TranslationKey) => string,
+) {
+  const key = dosageFormLabelKeys[value.trim().toLowerCase()];
+  return key ? t(key) : value;
+}
 
 function defaultTimesForCount(n: number): string[] {
   if (n === 0) return [];
@@ -169,19 +220,15 @@ function TimeSlotInput({
   value,
   onChange,
   colors,
+  t,
 }: {
   index: number;
   value: string;
   onChange: (v: string) => void;
   colors: (typeof Colors)["light"];
+  t: (key: TranslationKey) => string;
 }) {
   const [showPresets, setShowPresets] = useState(false);
-  const labels = [
-    "Morning dose",
-    "Midday dose",
-    "Afternoon dose",
-    "Evening dose",
-  ];
   return (
     <View style={ts.wrap}>
       <View style={ts.row}>
@@ -191,14 +238,16 @@ function TimeSlotInput({
           <Feather name="clock" size={14} color={colors.primary} />
         </View>
         <Text style={[ts.label, { color: colors.textSecondary }]}>
-          {labels[index] ?? `Dose ${index + 1}`}
+          {index < timeLabelKeys.length
+            ? t(timeLabelKeys[index])
+            : `${t("doseLabel")} ${index + 1}`}
         </Text>
         <Pressable
           onPress={() => setShowPresets((p) => !p)}
           style={[ts.toggleBtn, { borderColor: colors.border }]}
         >
           <Text style={[ts.toggleText, { color: colors.primary }]}>
-            Presets
+            {t("presets")}
           </Text>
           <Feather
             name={showPresets ? "chevron-up" : "chevron-down"}
@@ -313,11 +362,13 @@ function MedRow({
   selected,
   onPress,
   colors,
+  t,
 }: {
   med: SearchableMedicine;
   selected: boolean;
   onPress: () => void;
   colors: (typeof Colors)["light"];
+  t: (key: TranslationKey) => string;
 }) {
   return (
     <Pressable
@@ -360,7 +411,7 @@ function MedRow({
           </View>
           <View style={[mr.chip, { backgroundColor: colors.surfaceSecondary }]}>
             <Text style={[mr.chipText, { color: colors.textSecondary }]}>
-              {med.dosageForm}
+              {localizedDosageForm(med.dosageForm, t)}
             </Text>
           </View>
           <View style={[mr.chip, { backgroundColor: colors.surfaceSecondary }]}>
@@ -609,7 +660,7 @@ export default function NewPrescriptionScreen() {
       }
       router.back();
     } catch (e) {
-      Alert.alert("Error", "Could not save prescription. Please try again.");
+      Alert.alert(t("error"), t("savePrescriptionError"));
     } finally {
       setSaving(false);
     }
@@ -729,6 +780,7 @@ export default function NewPrescriptionScreen() {
                           setSelectedMed(selectedMed?.id === m.id ? null : m)
                         }
                         colors={colors}
+                        t={t}
                       />
                     ))
                   ) : (
@@ -880,7 +932,7 @@ export default function NewPrescriptionScreen() {
                   >
                     {useCustom
                       ? t("customMedicationName")
-                      : `${selectedMed?.strength} · ${selectedMed?.dosageForm}`}
+                      : `${selectedMed?.strength} · ${localizedDosageForm(selectedMed?.dosageForm ?? "", t)}`}
                   </Text>
                 </View>
                 <Pressable onPress={goBack} hitSlop={8}>
@@ -902,7 +954,7 @@ export default function NewPrescriptionScreen() {
                 ]}
                 value={dose}
                 onChangeText={setDose}
-                placeholder="e.g. 1 tablet, 500mg, 5ml"
+                placeholder={t("dosePlaceholder")}
                 placeholderTextColor={colors.textMuted}
               />
 
@@ -934,7 +986,7 @@ export default function NewPrescriptionScreen() {
                         { color: frequency === f.value ? "#fff" : colors.text },
                       ]}
                     >
-                      {f.label}
+                      {localizedFrequency(f.value, t)}
                     </Text>
                   </Pressable>
                 ))}
@@ -976,7 +1028,7 @@ export default function NewPrescriptionScreen() {
                         { color: foodReq === f.value ? "#fff" : colors.text },
                       ]}
                     >
-                      {f.label}
+                      {localizedFood(f.value, t)}
                     </Text>
                   </Pressable>
                 ))}
@@ -1163,15 +1215,13 @@ export default function NewPrescriptionScreen() {
                 <SummaryRow
                   icon="repeat"
                   label={t("frequencyLabel")}
-                  value={frequency}
+                  value={localizedFrequency(frequency, t)}
                   colors={colors}
                 />
                 <SummaryRow
                   icon="coffee"
                   label={t("foodRequirementLabel")}
-                  value={
-                    FOOD_OPTIONS.find((f) => f.value === foodReq)?.label ?? ""
-                  }
+                  value={localizedFood(foodReq, t)}
                   colors={colors}
                 />
                 <SummaryRow

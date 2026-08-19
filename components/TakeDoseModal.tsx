@@ -13,6 +13,7 @@ import {
   useColorScheme,
 } from "react-native";
 import Colors from "@/constants/colors";
+import { useApp } from "@/context/AppContext";
 import type { DoseSchedule, Prescription } from "@/models";
 import { formatTime } from "@/utils/time";
 import { MedicineIconContainer } from "./ui/MedicineIcon";
@@ -34,6 +35,7 @@ export function TakeDoseModal({
 }: TakeDoseModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
+  const { t } = useApp();
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -85,7 +87,7 @@ export function TakeDoseModal({
             <View style={styles.headerText}>
               <View style={styles.titleRow}>
                 <Text style={[styles.eyebrow, { color: colors.success }]}>
-                  Confirm action
+                  {t("confirmAction")}
                 </Text>
                 <View
                   style={[
@@ -100,7 +102,7 @@ export function TakeDoseModal({
                 </View>
               </View>
               <Text style={[styles.title, { color: colors.text }]}>
-                Mark as Taken
+                {t("markAsTakenShort")}
               </Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                 {prescription.medicine.name} · {prescription.dose}
@@ -111,12 +113,12 @@ export function TakeDoseModal({
           {/* Note input */}
           <View style={styles.noteSection}>
             <Text style={[styles.noteLabel, { color: colors.text }]}>
-              Add a personal note (optional)
+              {t("addPersonalNote")}
             </Text>
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="e.g. Took with breakfast, felt fine..."
+              placeholder={t("doseNotePlaceholder")}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
@@ -138,8 +140,10 @@ export function TakeDoseModal({
               disabled={loading}
               style={[styles.cancelBtn, { borderColor: colors.border }]}
             >
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
-                Cancel
+              <Text
+                style={[styles.cancelText, { color: colors.textSecondary }]}
+              >
+                {t("cancel")}
               </Text>
             </Pressable>
             <Pressable
@@ -159,7 +163,7 @@ export function TakeDoseModal({
                 <Feather name="check-circle" size={18} color="#fff" />
               )}
               <Text style={styles.confirmText}>
-                {loading ? "Saving..." : "Mark Taken"}
+                {loading ? t("savingShort") : t("markAsTakenShort")}
               </Text>
             </Pressable>
           </View>

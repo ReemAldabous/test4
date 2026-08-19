@@ -1269,7 +1269,8 @@ export default function DiaryScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const insets = useSafeAreaInsets();
-  const { observationSessions, patient, removeObservationSession } = useApp();
+  const { observationSessions, patient, removeObservationSession, t } =
+    useApp();
   const observationDiaryEntries = useMemo(
     () => mapObservationSessionsToDiaryEntries(observationSessions),
     [observationSessions],
@@ -1368,8 +1369,11 @@ export default function DiaryScreen() {
       const entriesToShare = selectedDate
         ? diaryEntries.filter((e) => e.date === selectedDate)
         : diaryEntries;
-      const text = buildShareText(entriesToShare, patient?.name ?? "Patient");
-      await Share.share({ message: text, title: "Health Diary" });
+      const text = buildShareText(
+        entriesToShare,
+        patient?.name ?? t("patient"),
+      );
+      await Share.share({ message: text, title: t("healthDiary") });
     } catch (_) {
     } finally {
       setIsSharing(false);
@@ -1377,10 +1381,10 @@ export default function DiaryScreen() {
   };
 
   const handleDelete = (entryId: string) => {
-    Alert.alert("Delete Diary", "Delete this diary entry?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("deleteDiary"), t("deleteDiaryConfirm"), [
+      { text: t("cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("delete"),
         style: "destructive",
         onPress: () => {
           void (async () => {
@@ -1390,8 +1394,8 @@ export default function DiaryScreen() {
               const message =
                 error instanceof Error && error.message
                   ? error.message
-                  : "Could not delete diary entry. Please try again.";
-              Alert.alert("Delete failed", message);
+                  : t("deleteFailedMessage");
+              Alert.alert(t("deleteFailed"), message);
             }
           })();
         },
@@ -1417,7 +1421,7 @@ export default function DiaryScreen() {
       return;
     }
 
-    Alert.alert("Unavailable", "This entry is missing source information.");
+    Alert.alert(t("unavailable"), t("missingEntrySource"));
   };
 
   return (
@@ -1431,7 +1435,7 @@ export default function DiaryScreen() {
       >
         <View style={styles.heroTop}>
           <View>
-            <Text style={styles.heroTitle}>Health Diary</Text>
+            <Text style={styles.heroTitle}>{t("healthDiary")}</Text>
             <Text style={styles.heroSub}>
               {new Date().toLocaleDateString("en-US", {
                 weekday: "long",
@@ -1449,7 +1453,7 @@ export default function DiaryScreen() {
             ]}
           >
             <Feather name="share-2" size={15} color="#fff" />
-            <Text style={styles.heroShareText}>Export</Text>
+            <Text style={styles.heroShareText}>{t("export")}</Text>
           </Pressable>
         </View>
 
@@ -1457,19 +1461,19 @@ export default function DiaryScreen() {
         <View style={styles.heroStats}>
           <View style={styles.heroStatItem}>
             <Text style={styles.heroStatNum}>{diaryEntries.length}</Text>
-            <Text style={styles.heroStatLabel}>Total entries</Text>
+            <Text style={styles.heroStatLabel}>{t("totalEntries")}</Text>
           </View>
           <View style={[styles.heroStatDivider]} />
           <View style={styles.heroStatItem}>
             <Text style={styles.heroStatNum}>{todayCount}</Text>
-            <Text style={styles.heroStatLabel}>Today</Text>
+            <Text style={styles.heroStatLabel}>{t("today")}</Text>
           </View>
           <View style={styles.heroStatDivider} />
           <View style={styles.heroStatItem}>
             <Text style={styles.heroStatNum}>
               {new Set(diaryEntries.map((e) => e.date)).size}
             </Text>
-            <Text style={styles.heroStatLabel}>Days logged</Text>
+            <Text style={styles.heroStatLabel}>{t("daysLogged")}</Text>
           </View>
         </View>
       </View>
@@ -1493,8 +1497,6 @@ export default function DiaryScreen() {
         onSelect={(date) => setSelectedDate(date)}
         onClose={() => setShowCalendar(false)}
       />
-
-   
 
       {/* ── timeline list ── */}
       <FlatList
@@ -1553,7 +1555,6 @@ export default function DiaryScreen() {
                   </Text>
                 </Pressable>
               )}
-              
             </View>
           </View>
         }

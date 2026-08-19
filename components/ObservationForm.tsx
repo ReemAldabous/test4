@@ -10,7 +10,12 @@ import {
   useColorScheme,
 } from "react-native";
 import Colors from "@/constants/colors";
-import type { Observation, ObservationSession, SymptomDefinition } from "@/models";
+import { useApp } from "@/context/AppContext";
+import type {
+  Observation,
+  ObservationSession,
+  SymptomDefinition,
+} from "@/models";
 
 interface ObservationFormProps {
   doseScheduleId: string;
@@ -33,12 +38,13 @@ export function ObservationForm({
 }: ObservationFormProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
+  const { t } = useApp();
 
   const initValues = () => {
     const init: Record<string, string | number | boolean> = {};
     for (const sym of symptomDefinitions) {
       const existing = existingSession?.observations.find(
-        (o) => o.symptomDefinitionId === sym.id
+        (o) => o.symptomDefinitionId === sym.id,
       );
       if (existing !== undefined) {
         init[sym.id] = existing.value;
@@ -51,16 +57,18 @@ export function ObservationForm({
     return init;
   };
 
-  const [values, setValues] = useState<Record<string, string | number | boolean>>(
-    initValues
-  );
+  const [values, setValues] =
+    useState<Record<string, string | number | boolean>>(initValues);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     const sessionId = existingSession?.id ?? generateId();
     const observations: Observation[] = symptomDefinitions.map((sym) => ({
-      id: existingSession?.observations.find((o) => o.symptomDefinitionId === sym.id)?.id ?? generateId(),
+      id:
+        existingSession?.observations.find(
+          (o) => o.symptomDefinitionId === sym.id,
+        )?.id ?? generateId(),
       sessionId,
       symptomDefinitionId: sym.id,
       symptomDefinition: sym,
@@ -81,12 +89,22 @@ export function ObservationForm({
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {symptomDefinitions.map((sym) => (
-          <View key={sym.id} style={[styles.field, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.label, { color: colors.text }]}>{sym.name}</Text>
+          <View
+            key={sym.id}
+            style={[styles.field, { borderBottomColor: colors.borderLight }]}
+          >
+            <Text style={[styles.label, { color: colors.text }]}>
+              {sym.name}
+            </Text>
             {sym.description && (
-              <Text style={[styles.desc, { color: colors.textMuted }]}>{sym.description}</Text>
+              <Text style={[styles.desc, { color: colors.textMuted }]}>
+                {sym.description}
+              </Text>
             )}
 
             {sym.type === "numeric" && (
@@ -96,20 +114,26 @@ export function ObservationForm({
                 max={sym.maxValue ?? 10}
                 unit={sym.unit}
                 colors={colors}
-                onChange={(v) => setValues((prev) => ({ ...prev, [sym.id]: v }))}
+                onChange={(v) =>
+                  setValues((prev) => ({ ...prev, [sym.id]: v }))
+                }
               />
             )}
             {sym.type === "boolean" && (
               <BooleanToggle
                 value={values[sym.id] as boolean}
                 colors={colors}
-                onChange={(v) => setValues((prev) => ({ ...prev, [sym.id]: v }))}
+                onChange={(v) =>
+                  setValues((prev) => ({ ...prev, [sym.id]: v }))
+                }
               />
             )}
             {sym.type === "text" && (
               <TextInput
                 value={values[sym.id] as string}
-                onChangeText={(t) => setValues((prev) => ({ ...prev, [sym.id]: t }))}
+                onChangeText={(t) =>
+                  setValues((prev) => ({ ...prev, [sym.id]: t }))
+                }
                 placeholder="Type your notes here..."
                 placeholderTextColor={colors.textMuted}
                 multiline
@@ -133,18 +157,25 @@ export function ObservationForm({
           onPress={onCancel}
           style={[styles.cancelBtn, { borderColor: colors.border }]}
         >
-          <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
+          <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
+            {t("cancel")}
+          </Text>
         </Pressable>
         <Pressable
           onPress={handleSave}
           disabled={saving}
           style={({ pressed }) => [
             styles.saveBtn,
-            { backgroundColor: colors.secondary, opacity: pressed || saving ? 0.85 : 1 },
+            {
+              backgroundColor: colors.secondary,
+              opacity: pressed || saving ? 0.85 : 1,
+            },
           ]}
         >
           <Feather name="save" size={16} color="#fff" />
-          <Text style={styles.saveBtnText}>{saving ? "Saving..." : "Save Diary"}</Text>
+          <Text style={styles.saveBtnText}>
+            {saving ? "Saving..." : "Save Diary"}
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -170,11 +201,19 @@ function NumericInput({
     <View style={styles.numericRow}>
       <Pressable
         onPress={() => onChange(Math.max(min, value - 1))}
-        style={[styles.numBtn, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+        style={[
+          styles.numBtn,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
       >
         <Feather name="minus" size={16} color={colors.text} />
       </Pressable>
-      <View style={[styles.numValue, { backgroundColor: colors.primary + "18" }]}>
+      <View
+        style={[styles.numValue, { backgroundColor: colors.primary + "18" }]}
+      >
         <Text style={[styles.numText, { color: colors.primary }]}>
           {value}
           {unit}
@@ -182,7 +221,13 @@ function NumericInput({
       </View>
       <Pressable
         onPress={() => onChange(Math.min(max, value + 1))}
-        style={[styles.numBtn, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+        style={[
+          styles.numBtn,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
       >
         <Feather name="plus" size={16} color={colors.text} />
       </Pressable>
@@ -206,13 +251,24 @@ function BooleanToggle({
         style={[
           styles.toggleBtn,
           {
-            backgroundColor: !value ? colors.success + "20" : colors.surfaceSecondary,
+            backgroundColor: !value
+              ? colors.success + "20"
+              : colors.surfaceSecondary,
             borderColor: !value ? colors.success : colors.border,
           },
         ]}
       >
-        <Feather name="x" size={16} color={!value ? colors.success : colors.textMuted} />
-        <Text style={[styles.toggleText, { color: !value ? colors.success : colors.textMuted }]}>
+        <Feather
+          name="x"
+          size={16}
+          color={!value ? colors.success : colors.textMuted}
+        />
+        <Text
+          style={[
+            styles.toggleText,
+            { color: !value ? colors.success : colors.textMuted },
+          ]}
+        >
           No
         </Text>
       </Pressable>
@@ -221,13 +277,24 @@ function BooleanToggle({
         style={[
           styles.toggleBtn,
           {
-            backgroundColor: value ? colors.error + "20" : colors.surfaceSecondary,
+            backgroundColor: value
+              ? colors.error + "20"
+              : colors.surfaceSecondary,
             borderColor: value ? colors.error : colors.border,
           },
         ]}
       >
-        <Feather name="check" size={16} color={value ? colors.error : colors.textMuted} />
-        <Text style={[styles.toggleText, { color: value ? colors.error : colors.textMuted }]}>
+        <Feather
+          name="check"
+          size={16}
+          color={value ? colors.error : colors.textMuted}
+        />
+        <Text
+          style={[
+            styles.toggleText,
+            { color: value ? colors.error : colors.textMuted },
+          ]}
+        >
           Yes
         </Text>
       </Pressable>

@@ -19,7 +19,8 @@ const ACTION_TAKEN = "TAKEN";
 const ACTION_IGNORE = "IGNORE";
 
 export function DoseAlertModal() {
-  const { currentDoseNotification, dismissDoseNotification, prescriptions, t } = useApp();
+  const { currentDoseNotification, dismissDoseNotification, prescriptions, t } =
+    useApp();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const [loading, setLoading] = useState(false);
@@ -114,13 +115,13 @@ export function DoseAlertModal() {
           {/* Title */}
           <View style={styles.titleBlock}>
             <Text style={[styles.kicker, { color: colors.primary }]}>
-              Medication reminder
+              {t("medicationReminder")}
             </Text>
             <Text style={[styles.title, { color: colors.text }]}>
               {t("doseAlertTitle")}
             </Text>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
-              Choose what you would like to record for this scheduled dose.
+              {t("scheduledDoseDescription")}
             </Text>
           </View>
 

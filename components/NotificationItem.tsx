@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View, useColorScheme } from "react-native";
 import Colors from "@/constants/colors";
+import { useApp } from "@/context/AppContext";
 import type { DoseSchedule, Prescription } from "@/models";
 import { formatTime, getTimeUntil } from "@/utils/time";
 import { MedicineIconContainer } from "./ui/MedicineIcon";
@@ -19,6 +20,7 @@ export function NotificationItem({
 }: NotificationItemProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
+  const { t } = useApp();
 
   return (
     <View
@@ -33,7 +35,7 @@ export function NotificationItem({
       {isNext && (
         <View style={[styles.nextBadge, { backgroundColor: colors.primary }]}>
           <Feather name="bell" size={10} color="#fff" />
-          <Text style={styles.nextText}>Next</Text>
+          <Text style={styles.nextText}>{t("next")}</Text>
         </View>
       )}
       <View style={styles.left}>
@@ -52,7 +54,12 @@ export function NotificationItem({
         </View>
       </View>
       <View style={styles.right}>
-        <Text style={[styles.time, { color: isNext ? colors.primary : colors.text }]}>
+        <Text
+          style={[
+            styles.time,
+            { color: isNext ? colors.primary : colors.text },
+          ]}
+        >
           {formatTime(doseSchedule.scheduledTime)}
         </Text>
         <Text style={[styles.remaining, { color: colors.textMuted }]}>

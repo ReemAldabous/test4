@@ -8,8 +8,9 @@ import {
   useColorScheme,
 } from "react-native";
 import Colors from "@/constants/colors";
+import { useApp } from "@/context/AppContext";
 import type { Prescription } from "@/models";
-import { formatDate, formatTime } from "@/utils/time";
+import { formatTime } from "@/utils/time";
 import { MedicineIconContainer } from "./ui/MedicineIcon";
 import { StatusBadge } from "./ui/StatusBadge";
 
@@ -28,6 +29,7 @@ export function PrescriptionCard({
 }: PrescriptionCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
+  const { t, locale } = useApp();
   const [expanded, setExpanded] = useState(false);
 
   const takenCount = prescription.doseSchedules.filter(
@@ -36,8 +38,50 @@ export function PrescriptionCard({
   const totalCount = prescription.doseSchedules.length;
   const completionLabel =
     totalCount > 0
-      ? `${Math.round((takenCount / totalCount) * 100)}% taken`
-      : "No doses";
+      ? t("takenPercent", {
+          percent: Math.round((takenCount / totalCount) * 100),
+        })
+      : t("noDoses");
+
+  const dosageFormLabels: Record<string, string> = {
+    tablet: t("dosageTablet"),
+    capsule: t("dosageCapsule"),
+    syrup: t("dosageSyrup"),
+    injection: t("dosageInjection"),
+    cream: t("dosageCream"),
+    drops: t("dosageDrops"),
+  };
+  const dosageForm =
+    dosageFormLabels[prescription.medicine.dosageForm.toLowerCase()] ??
+    prescription.medicine.dosageForm;
+  const frequencyLabels: Record<string, string> = {
+    "once daily": t("onceDaily"),
+    "twice daily": t("twiceDaily"),
+    "three times daily": t("threeTimesDaily"),
+    "four times daily": t("fourTimesDaily"),
+    "as needed": t("asNeeded"),
+  };
+  const frequency =
+    frequencyLabels[prescription.frequency.toLowerCase()] ??
+    prescription.frequency.replace(/ hours?$/i, ` ${t("hoursUnit")}`);
+  const prescribedByLabels: Record<string, string> = {
+    myself: t("myself"),
+    doctor: t("doctor"),
+    pharmacist: t("pharmacist"),
+  };
+  const prescribedBy =
+    prescribedByLabels[prescription.prescribedBy.toLowerCase()] ??
+    prescription.prescribedBy;
+  const formatLocalizedDate = (value: string) => {
+    const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+    return Number.isNaN(date.getTime())
+      ? value
+      : date.toLocaleDateString(locale, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+  };
 
   return (
     <View
@@ -101,7 +145,7 @@ export function PrescriptionCard({
             />
             <View style={styles.headerInfo}>
               <Text style={[styles.cardLabel, { color: colors.textMuted }]}>
-                Prescription
+                {t("prescriptionLabel")}
               </Text>
               <Text
                 style={[styles.name, { color: colors.text }]}
@@ -129,7 +173,7 @@ export function PrescriptionCard({
                       { color: colors.textSecondary },
                     ]}
                   >
-                    {prescription.medicine.dosageForm}
+                    {dosageForm}
                   </Text>
                 </View>
                 <View
@@ -145,7 +189,7 @@ export function PrescriptionCard({
                       { color: colors.textSecondary },
                     ]}
                   >
-                    {prescription.prescribedBy}
+                    {prescribedBy}
                   </Text>
                 </View>
               </View>
@@ -157,27 +201,31 @@ export function PrescriptionCard({
         <View
           style={[styles.detailsBlock, { borderTopColor: colors.borderLight }]}
         >
-          <DetailRow label="Dose" value={prescription.dose} colors={colors} />
           <DetailRow
-            label="Frequency"
-            value={prescription.frequency}
+            label={t("doseLabel")}
+            value={prescription.dose}
             colors={colors}
           />
           <DetailRow
-            label="Start date"
-            value={formatDate(prescription.startDate)}
+            label={t("frequencyLabel")}
+            value={frequency}
+            colors={colors}
+          />
+          <DetailRow
+            label={t("startDateLabel")}
+            value={formatLocalizedDate(prescription.startDate)}
             colors={colors}
           />
           {prescription.endDate && (
             <DetailRow
-              label="End date"
-              value={formatDate(prescription.endDate)}
+              label={t("endDateLabel")}
+              value={formatLocalizedDate(prescription.endDate)}
               colors={colors}
             />
           )}
           <DetailRow
-            label="Prescribed by"
-            value={prescription.prescribedBy}
+            label={t("prescribedByLabel")}
+            value={prescribedBy}
             colors={colors}
           />
         </View>
@@ -202,7 +250,7 @@ export function PrescriptionCard({
             >
               <Feather name="edit-2" size={14} color={colors.primary} />
               <Text style={[styles.actionText, { color: colors.primary }]}>
-                Edit
+                {t("edit")}
               </Text>
             </Pressable>
           )}
@@ -220,7 +268,7 @@ export function PrescriptionCard({
             >
               <Feather name="trash-2" size={14} color="#FF3B30" />
               <Text style={[styles.actionText, { color: "#FF3B30" }]}>
-                Delete
+                {t("delete")}
               </Text>
             </Pressable>
           )}
@@ -233,7 +281,7 @@ export function PrescriptionCard({
         style={[styles.expandBtn, { borderTopColor: colors.borderLight }]}
       >
         <Text style={[styles.expandLabel, { color: colors.primary }]}>
-          {expanded ? "Hide" : "Show"} schedule
+          {expanded ? t("hideSchedule") : t("showSchedule")}
         </Text>
         <Feather
           name={expanded ? "chevron-up" : "chevron-down"}

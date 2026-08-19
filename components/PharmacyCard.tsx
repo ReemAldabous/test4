@@ -9,6 +9,7 @@ import {
   useColorScheme,
 } from "react-native";
 import Colors from "@/constants/colors";
+import { useApp } from "@/context/AppContext";
 import type { Pharmacy } from "@/models";
 
 interface PharmacyCardProps {
@@ -24,6 +25,7 @@ export function PharmacyCard({
 }: PharmacyCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
+  const { t } = useApp();
 
   const handleCall = () => {
     if (!pharmacy.phone) return;
@@ -189,7 +191,7 @@ export function PharmacyCard({
               >
                 <Feather name="phone" size={14} color={colors.primary} />
                 <Text style={[styles.actionText, { color: colors.primary }]}>
-                  Call
+                  {t("call")}
                 </Text>
               </Pressable>
             )}
@@ -206,7 +208,7 @@ export function PharmacyCard({
               >
                 <Feather name="navigation" size={14} color="#fff" />
                 <Text style={[styles.actionText, { color: "#fff" }]}>
-                  Directions
+                  {t("directions")}
                 </Text>
               </Pressable>
             )}

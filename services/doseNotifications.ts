@@ -11,7 +11,7 @@ const ACTION_IGNORE = "IGNORE";
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: false,
+      shouldShowBanner: true,
       shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
@@ -89,31 +89,60 @@ export async function syncDoseReminderNotifications(
     const { status } = await Notifications.getPermissionsAsync();
     let finalStatus = status;
     if (status !== "granted") {
-      const req = await Notifications.requestPermissionsAsync();
+      const req = await Notifications.requestPermissionsAsync({
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      });
       finalStatus = req.status;
     }
-    if (finalStatus !== "granted") return;
+    if (finalStatus !== "granted") {
+      console.warn(
+        "Dose notifications permission was not granted:",
+        finalStatus,
+      );
+      return;
+    }
 
     await ensureAndroidChannel();
     await ensureAndroidCategory();
     await cancelAllDoseNotifications();
 
+    let scheduledCount = 0;
+    let skippedCount = 0;
     for (const rx of prescriptions) {
       if (!isPrescriptionActive(rx)) continue;
       for (const ds of rx.doseSchedules) {
-        await scheduleForDose(rx, ds);
+        const result = await scheduleForDose(rx, ds);
+        scheduledCount += result.scheduled;
+        skippedCount += result.skipped;
       }
     }
+    console.log("Dose notifications sync:", {
+      prescriptions: prescriptions.length,
+      scheduled: scheduledCount,
+      skipped: skippedCount,
+    });
   } catch (e) {
     console.warn("syncDoseReminderNotifications:", e);
   }
 }
 
-async function scheduleForDose(rx: Prescription, ds: DoseSchedule) {
-  if (ds.status === "taken" || ds.status === "skipped") return;
+function parseNotificationDate(value: string): Date {
+  const normalized = value.trim().replace(" ", "T");
+  return new Date(normalized);
+}
+
+async function scheduleForDose(
+  rx: Prescription,
+  ds: DoseSchedule,
+): Promise<{ scheduled: number; skipped: number }> {
+  if (ds.status === "taken" || ds.status === "skipped") {
+    return { scheduled: 0, skipped: 1 };
+  }
   // The backend is the source of truth for dose timing. Do not create a
   // recurring local schedule from frequency or scheduledTime.
-  if (!ds.takeAt) return;
+  if (!ds.takeAt) return { scheduled: 0, skipped: 1 };
 
   const scheduledId = ds.scheduledId != null ? String(ds.scheduledId) : ds.id;
 
@@ -123,7 +152,7 @@ async function scheduleForDose(rx: Prescription, ds: DoseSchedule) {
     subtitle: "PharmaTel reminder",
     body,
     data: { prescriptionId: rx.id, doseScheduleId: scheduledId },
-    sound: true as const,
+    sound: "default" as const,
     categoryIdentifier: ANDROID_CATEGORY,
     ...(Platform.OS === "android"
       ? {
@@ -134,8 +163,10 @@ async function scheduleForDose(rx: Prescription, ds: DoseSchedule) {
       : {}),
   };
 
-  const when = new Date(ds.takeAt);
-  if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) return;
+  const when = parseNotificationDate(ds.takeAt);
+  if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+    return { scheduled: 0, skipped: 1 };
+  }
 
   await Notifications.scheduleNotificationAsync({
     identifier: doseNotificationIdentifier(rx.id, scheduledId),
@@ -145,4 +176,5 @@ async function scheduleForDose(rx: Prescription, ds: DoseSchedule) {
       date: when,
     },
   });
+  return { scheduled: 1, skipped: 0 };
 }

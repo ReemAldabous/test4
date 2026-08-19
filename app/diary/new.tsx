@@ -17,6 +17,7 @@ import Colors from "@/constants/colors";
 import DateTimeField from "@/components/ui/DateTimeField";
 import { toLocalIso } from "@/utils/time";
 import { useApp } from "@/context/AppContext";
+import type { TranslationKey } from "@/lib/i18n";
 import type { DiaryMetric, ObservationSession } from "@/models";
 import {
   METRIC_DEFINITIONS,
@@ -40,6 +41,43 @@ function nowTime() {
 
 function todayDate() {
   return toLocalIso();
+}
+
+const metricLabelKeys: Record<string, TranslationKey> = {
+  temperature: "temperature",
+  weight: "weight",
+  heart_rate: "heartRate",
+  bp_systolic: "bpSystolic",
+  bp_diastolic: "bpDiastolic",
+  blood_oxygen: "bloodOxygen",
+  blood_sugar: "bloodSugar",
+  pain_level: "painLevel",
+  sleep_hours: "sleep",
+  water_intake: "waterIntake",
+  steps: "steps",
+  note: "customNote",
+};
+
+const moodLabelKeys: Record<string, TranslationKey> = {
+  "Very Bad": "veryBad",
+  Bad: "bad",
+  Okay: "okay",
+  Good: "good",
+  Great: "great",
+};
+
+function getMetricLabel(
+  type: string,
+  fallback: string,
+  t: (key: TranslationKey) => string,
+) {
+  const key = metricLabelKeys[type];
+  return key ? t(key) : fallback;
+}
+
+function getMoodLabel(label: string, t: (key: TranslationKey) => string) {
+  const key = moodLabelKeys[label];
+  return key ? t(key) : label;
 }
 
 function toDateTime(date: string, time: string): string {
@@ -83,16 +121,20 @@ function moodTextToState(value: string | number): number | undefined {
 
 interface MetricInputProps {
   metric: DiaryMetric;
+  label: string;
   onChangeValue: (id: string, value: string | number) => void;
   onRemove: (id: string) => void;
   colors: (typeof Colors)["light"];
+  placeholder: string;
 }
 
 function MetricInput({
   metric,
+  label,
   onChangeValue,
   onRemove,
   colors,
+  placeholder,
 }: MetricInputProps) {
   const def = getMetricDef(metric.type);
   const color = def?.color ?? colors.primary;
@@ -118,7 +160,7 @@ function MetricInput({
           <View style={styles.metricBlockTitle}>
             <Feather name={metric.icon as any} size={16} color={color} />
             <Text style={[styles.metricBlockLabel, { color: colors.text }]}>
-              {metric.label}
+              {label}
             </Text>
             <Text style={[styles.metricBlockUnit, { color: colors.textMuted }]}>
               {metric.unit}
@@ -175,7 +217,7 @@ function MetricInput({
         <View style={styles.metricBlockTitle}>
           <Feather name={metric.icon as any} size={16} color={color} />
           <Text style={[styles.metricBlockLabel, { color: colors.text }]}>
-            {metric.label}
+            {label}
           </Text>
           {metric.unit ? (
             <Text style={[styles.metricBlockUnit, { color: colors.textMuted }]}>
@@ -204,7 +246,7 @@ function MetricInput({
             onChangeValue(metric.id, v);
           }
         }}
-        placeholder={def?.placeholder ?? "Enter value"}
+        placeholder={def?.placeholder ?? placeholder}
         placeholderTextColor={colors.textMuted}
         keyboardType={def?.inputType === "numeric" ? "decimal-pad" : "default"}
         returnKeyType="done"
@@ -217,7 +259,7 @@ export default function NewDiaryEntryScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const { entryId } = useLocalSearchParams<{ entryId?: string }>();
-  const { saveObservation, observationSessions } = useApp();
+  const { saveObservation, observationSessions, t } = useApp();
   const isEdit = Boolean(entryId);
 
   const [date, setDate] = useState(todayDate());
@@ -321,10 +363,7 @@ export default function NewDiaryEntryScreen() {
 
   const handleSave = async () => {
     if (metrics.length === 0 && !generalNotes.trim() && mood === undefined) {
-      Alert.alert(
-        "Empty Entry",
-        "Please add at least one metric, mood, or note.",
-      );
+      Alert.alert(t("emptyEntry"), t("emptyEntryMessage"));
       return;
     }
     setIsSaving(true);
@@ -426,13 +465,11 @@ export default function NewDiaryEntryScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Date/Time row */}
-       
-          
 
           {/* Mood */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              How are you feeling?
+              {t("howFeeling")}
             </Text>
             <View style={styles.moodRow}>
               {Object.entries(MOOD_LABELS).map(([key, val]) => {
@@ -464,7 +501,7 @@ export default function NewDiaryEntryScreen() {
                         },
                       ]}
                     >
-                      {val.label}
+                      {getMoodLabel(val.label, t)}
                     </Text>
                   </Pressable>
                 );
@@ -476,7 +513,7 @@ export default function NewDiaryEntryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionRow}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Vitals & Metrics
+                {t("vitalsMetrics")}
               </Text>
               <Pressable
                 onPress={() => setShowMetricPicker((v) => !v)}
@@ -496,7 +533,7 @@ export default function NewDiaryEntryScreen() {
                 <Text
                   style={[styles.addMetricBtnText, { color: colors.primary }]}
                 >
-                  {showMetricPicker ? "Close" : "Add Metric"}
+                  {showMetricPicker ? t("close") : t("addMetric")}
                 </Text>
               </Pressable>
             </View>
@@ -541,7 +578,7 @@ export default function NewDiaryEntryScreen() {
                         ]}
                         numberOfLines={1}
                       >
-                        {def.label}
+                        {getMetricLabel(def.type, def.label, t)}
                       </Text>
                       {added && (
                         <Feather name="check" size={11} color={def.color} />
@@ -556,9 +593,13 @@ export default function NewDiaryEntryScreen() {
               <MetricInput
                 key={m.id}
                 metric={m}
+                label={getMetricLabel(m.type, m.label, t)}
                 onChangeValue={updateMetricValue}
                 onRemove={removeMetric}
                 colors={colors}
+                placeholder={
+                  m.type === "note" ? t("writeAnything") : t("enterValue")
+                }
               />
             ))}
 
@@ -575,7 +616,7 @@ export default function NewDiaryEntryScreen() {
                 <Text
                   style={[styles.metricsEmptyText, { color: colors.textMuted }]}
                 >
-                  No metrics added yet. Tap "Add Metric" to log your vitals.
+                  {t("noMetricsYet")}
                 </Text>
               </View>
             )}
@@ -584,7 +625,7 @@ export default function NewDiaryEntryScreen() {
           {/* General Notes */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Notes
+              {t("notes")}
             </Text>
             <TextInput
               value={generalNotes}
@@ -597,7 +638,7 @@ export default function NewDiaryEntryScreen() {
                   borderColor: colors.border,
                 },
               ]}
-              placeholder="How are you feeling today? Any symptoms, side effects, observations..."
+              placeholder={t("feelingPlaceholder")}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
@@ -620,7 +661,7 @@ export default function NewDiaryEntryScreen() {
             <Text
               style={[styles.cancelBtnText, { color: colors.textSecondary }]}
             >
-              Cancel
+              {t("cancel")}
             </Text>
           </Pressable>
           <Pressable
@@ -636,7 +677,7 @@ export default function NewDiaryEntryScreen() {
           >
             <Feather name={isEdit ? "check" : "save"} size={17} color="#fff" />
             <Text style={styles.saveBtnText}>
-              {isEdit ? "Update Entry" : "Save Entry"}
+              {isEdit ? t("updateEntry") : t("saveEntry")}
             </Text>
           </Pressable>
         </View>

@@ -9,6 +9,7 @@ import {
   useColorScheme,
 } from "react-native";
 import Colors from "@/constants/colors";
+import { useApp } from "@/context/AppContext";
 import type { DoseSchedule, Prescription } from "@/models";
 import { formatTime, getTimeUntil } from "@/utils/time";
 import { MedicineIconContainer } from "./ui/MedicineIcon";
@@ -28,6 +29,7 @@ export function DoseCard({
   onMarkTaken,
 }: DoseCardProps) {
   const colorScheme = useColorScheme();
+  const { t } = useApp();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const isPending = doseSchedule.status === "pending";
   const isTaken = doseSchedule.status === "taken";
@@ -62,14 +64,17 @@ export function DoseCard({
           <Text style={[styles.dose, { color: colors.textSecondary }]}>
             {prescription.dose} · {formatTime(doseSchedule.scheduledTime)}
           </Text>
-          <Text style={[styles.food, { color: colors.textMuted }]} numberOfLines={1}>
+          <Text
+            style={[styles.food, { color: colors.textMuted }]}
+            numberOfLines={1}
+          >
             {prescription.foodRequirement === "before_meal"
               ? "Before meal"
               : prescription.foodRequirement === "after_meal"
-              ? "After meal"
-              : prescription.foodRequirement === "with_meal"
-              ? "With meal"
-              : "Any time"}
+                ? "After meal"
+                : prescription.foodRequirement === "with_meal"
+                  ? "With meal"
+                  : "Any time"}
           </Text>
         </View>
       </View>
@@ -93,7 +98,7 @@ export function DoseCard({
             ]}
           >
             <Feather name="check" size={14} color="#fff" />
-            <Text style={styles.takeBtnText}>Take</Text>
+            <Text style={styles.takeBtnText}>{t("take")}</Text>
           </Pressable>
         )}
       </View>

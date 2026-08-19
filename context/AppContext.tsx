@@ -144,22 +144,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const prescriptionsKey = React.useMemo(
-    () => ([("app" as const), ("prescriptions" as const), patient?.id] as const),
+    () => ["app" as const, "prescriptions" as const, patient?.id] as const,
     [patient?.id],
   );
 
   const observationSessionsKey = React.useMemo(
-    () => ([("app" as const), ("observationSessions" as const), patient?.id] as const),
+    () =>
+      ["app" as const, "observationSessions" as const, patient?.id] as const,
     [patient?.id],
   );
 
   const diaryEntriesKey = React.useMemo(
-    () => ([("app" as const), ("diaryEntries" as const), patient?.id] as const),
+    () => ["app" as const, "diaryEntries" as const, patient?.id] as const,
     [patient?.id],
   );
 
   const symptomDefinitionsKey = React.useMemo(
-    () => ([("app" as const), ("symptomDefinitions" as const), patient?.id] as const),
+    () => ["app" as const, "symptomDefinitions" as const, patient?.id] as const,
     [patient?.id],
   );
 
@@ -206,7 +207,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedLanguage = await AsyncStorage.getItem("preferredLanguage");
         setLanguageState(
-          storedLanguage ? normalizeLanguage(storedLanguage) : detectPreferredLanguage(),
+          storedLanguage
+            ? normalizeLanguage(storedLanguage)
+            : detectPreferredLanguage(),
         );
       } catch (error) {
         console.error("Failed to load preferred language:", error);
@@ -406,8 +409,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       return updateDoseSchedule(prescriptionId, doseScheduleId, updates);
     },
-    onSuccess: (updated) => {
-      queryClient.setQueryData(prescriptionsKey, updated);
+    onMutate: ({ prescriptionId, doseScheduleId, note }) => {
+      const previous =
+        queryClient.getQueryData<Prescription[]>(prescriptionsKey);
+      const takenAt = new Date().toISOString();
+
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        (current = []) =>
+          current.map((prescription) =>
+            prescription.id !== prescriptionId
+              ? prescription
+              : {
+                  ...prescription,
+                  doseSchedules: prescription.doseSchedules.map((dose) =>
+                    dose.id !== doseScheduleId
+                      ? dose
+                      : {
+                          ...dose,
+                          status: "taken",
+                          takenAt,
+                          patientNote: note,
+                        },
+                  ),
+                },
+          ),
+      );
+
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(prescriptionsKey, context.previous);
+      }
+    },
+    onSuccess: (updated, { prescriptionId, doseScheduleId, note }) => {
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        updated.map((prescription) =>
+          prescription.id !== prescriptionId
+            ? prescription
+            : {
+                ...prescription,
+                doseSchedules: prescription.doseSchedules.map((dose) =>
+                  dose.id !== doseScheduleId
+                    ? dose
+                    : {
+                        ...dose,
+                        status: "taken",
+                        takenAt: dose.takenAt ?? new Date().toISOString(),
+                        patientNote: note,
+                      },
+                ),
+              },
+        ),
+      );
     },
   });
 
@@ -455,8 +511,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addPrescriptionMutation = useMutation({
     mutationFn: addPrescription,
-    onSuccess: (updated) => {
-      queryClient.setQueryData(prescriptionsKey, updated);
+    onMutate: (prescription) => {
+      const previous =
+        queryClient.getQueryData<Prescription[]>(prescriptionsKey);
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        (current = []) => [...current, prescription],
+      );
+      return { previous, prescription };
+    },
+    onError: (_error, _prescription, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(prescriptionsKey, context.previous);
+      }
+    },
+    onSuccess: (updated, _prescription, context) => {
+      const optimistic = context?.prescription;
+      const hasMatchingServerPrescription = optimistic
+        ? updated.some(
+            (item) =>
+              item.medicine.name === optimistic.medicine.name &&
+              item.dose === optimistic.dose &&
+              item.startDate.slice(0, 10) === optimistic.startDate.slice(0, 10),
+          )
+        : false;
+
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        hasMatchingServerPrescription || !optimistic
+          ? updated
+          : [...updated, optimistic],
+      );
     },
   });
 
@@ -475,8 +560,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prescriptionId: string;
       prescription: Prescription;
     }) => updatePrescription(prescriptionId, prescription),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(prescriptionsKey, updated);
+    onMutate: ({ prescriptionId, prescription }) => {
+      const previous =
+        queryClient.getQueryData<Prescription[]>(prescriptionsKey);
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        (current = []) =>
+          current.map((item) =>
+            item.id === prescriptionId
+              ? {
+                  ...item,
+                  ...prescription,
+                  doseSchedules: prescription.doseSchedules,
+                }
+              : item,
+          ),
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(prescriptionsKey, context.previous);
+      }
+    },
+    onSuccess: (updated, { prescriptionId, prescription }) => {
+      queryClient.setQueryData<Prescription[]>(
+        prescriptionsKey,
+        updated.map((item) =>
+          item.id === prescriptionId
+            ? {
+                ...item,
+                medicine: prescription.medicine,
+                medicineId: prescription.medicineId,
+                dose: prescription.dose,
+                frequency: prescription.frequency,
+                foodRequirement: prescription.foodRequirement,
+                startDate: prescription.startDate,
+                note: prescription.note,
+                notes: prescription.notes,
+                byDoctor: prescription.byDoctor,
+                doctorName: prescription.doctorName,
+                prescribedBy: prescription.prescribedBy,
+              }
+            : item,
+        ),
+      );
     },
   });
 
