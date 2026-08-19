@@ -3,7 +3,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 function formatDate(d: Date) {
-  return d.toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatTime(d: Date) {
@@ -12,6 +15,10 @@ function formatTime(d: Date) {
 
 function formatDateTime(d: Date) {
   return `${formatDate(d)} ${formatTime(d)}`;
+}
+
+function formatLocalDateTime(d: Date) {
+  return `${formatDate(d)}T${formatTime(d)}:00`;
 }
 
 export default function DateTimeField({
@@ -91,7 +98,9 @@ export default function DateTimeField({
 
             if (mode !== "datetime") {
               setShow(false);
-              onChange(selected.toISOString());
+              onChange(
+                mode === "date" ? formatDate(selected) : formatTime(selected),
+              );
               return;
             }
 
@@ -107,7 +116,7 @@ export default function DateTimeField({
             const base = datetimeDraft ?? current;
             const merged = new Date(base);
             merged.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
-            onChange(merged.toISOString());
+            onChange(formatLocalDateTime(merged));
             setShow(false);
             setDatetimeDraft(null);
             setPickerMode("date");
