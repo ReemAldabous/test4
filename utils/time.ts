@@ -1,3 +1,5 @@
+import type { Language } from "@/lib/i18n";
+
 export function formatTime(time24: string): string {
   const [hourStr, minuteStr] = time24.split(":");
   const hour = parseInt(hourStr, 10);
@@ -82,7 +84,23 @@ export function toLocalIso(d?: Date | string): string {
   return `${y}-${m}-${day}`;
 }
 
-export function foodRequirementLabel(req: string): string {
+export function foodRequirementLabel(
+  req: string,
+  language: Language = "en",
+): string {
+  if (language === "ar") {
+    switch (req) {
+      case "before_meal":
+        return "قبل الوجبة";
+      case "after_meal":
+        return "بعد الوجبة";
+      case "with_meal":
+        return "مع الوجبة";
+      case "any_time":
+        return "في أي وقت";
+    }
+  }
+
   switch (req) {
     case "before_meal":
       return "Before meal";

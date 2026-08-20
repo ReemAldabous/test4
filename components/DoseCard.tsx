@@ -11,7 +11,7 @@ import {
 import Colors from "@/constants/colors";
 import { useApp } from "@/context/AppContext";
 import type { DoseSchedule, Prescription } from "@/models";
-import { formatTime, getTimeUntil } from "@/utils/time";
+import { foodRequirementLabel, formatTime, getTimeUntil } from "@/utils/time";
 import { MedicineIconContainer } from "./ui/MedicineIcon";
 import { StatusBadge } from "./ui/StatusBadge";
 
@@ -29,7 +29,7 @@ export function DoseCard({
   onMarkTaken,
 }: DoseCardProps) {
   const colorScheme = useColorScheme();
-  const { t } = useApp();
+  const { language, t } = useApp();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const isPending = doseSchedule.status === "pending";
   const isTaken = doseSchedule.status === "taken";
@@ -68,13 +68,7 @@ export function DoseCard({
             style={[styles.food, { color: colors.textMuted }]}
             numberOfLines={1}
           >
-            {prescription.foodRequirement === "before_meal"
-              ? "Before meal"
-              : prescription.foodRequirement === "after_meal"
-                ? "After meal"
-                : prescription.foodRequirement === "with_meal"
-                  ? "With meal"
-                  : "Any time"}
+            {foodRequirementLabel(prescription.foodRequirement, language)}
           </Text>
         </View>
       </View>
