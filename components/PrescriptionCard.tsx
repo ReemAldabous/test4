@@ -115,26 +115,7 @@ export function PrescriptionCard({
             >
               <Text style={[styles.rxText, { color: colors.primary }]}>Rx</Text>
             </View>
-            <View style={styles.headerRight}>
-              <View
-                style={[
-                  styles.progressPill,
-                  {
-                    backgroundColor: colors.primary + "14",
-                    borderColor: colors.primary + "25",
-                  },
-                ]}
-              >
-                <Text style={[styles.progressText, { color: colors.primary }]}>
-                  {takenCount}/{totalCount}
-                </Text>
-                <Text
-                  style={[styles.progressSubtext, { color: colors.primary }]}
-                >
-                  {completionLabel}
-                </Text>
-              </View>
-            </View>
+            <View style={styles.headerRight}></View>
           </View>
 
           <View style={styles.header}>
@@ -301,11 +282,23 @@ export function PrescriptionCard({
                 { borderTopColor: colors.borderLight },
               ]}
             >
-              <View style={styles.scheduleTime}>
-                <Feather name="clock" size={14} color={colors.textMuted} />
-                <Text style={[styles.scheduleTimeText, { color: colors.text }]}>
-                  {formatTime(ds.scheduledTime)}
-                </Text>
+              <View style={styles.scheduleDetails}>
+                <View style={styles.scheduleTime}>
+                  <Feather name="calendar" size={14} color={colors.textMuted} />
+                  <Text
+                    style={[styles.scheduleDateText, { color: colors.text }]}
+                  >
+                    {formatLocalizedDate(ds.takeAt ?? prescription.startDate)}
+                  </Text>
+                </View>
+                <View style={styles.scheduleTime}>
+                  <Feather name="clock" size={14} color={colors.textMuted} />
+                  <Text
+                    style={[styles.scheduleTimeText, { color: colors.text }]}
+                  >
+                    {formatTime(ds.scheduledTime)}
+                  </Text>
+                </View>
               </View>
               <StatusBadge status={ds.status} size="sm" />
             </View>
@@ -514,6 +507,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
   },
+  scheduleDetails: {
+    gap: 5,
+  },
   scheduleTime: {
     flexDirection: "row",
     alignItems: "center",
@@ -522,5 +518,9 @@ const styles = StyleSheet.create({
   scheduleTimeText: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
+  },
+  scheduleDateText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
   },
 });
