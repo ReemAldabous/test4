@@ -6,6 +6,9 @@ const translations = {
   en: {
     appName: "PharmaTel",
     today: "Today",
+    yesterday: "Yesterday",
+    all: "All",
+    clear: "Clear",
     schedule: "Schedule",
     search: "Search",
     diary: "Diary",
@@ -184,6 +187,8 @@ const translations = {
     pharmacyTapCardHint: "Tap a card to highlight a pharmacy on the map.",
     todayDosesEmpty: "No doses scheduled for today.",
     noSymptomDiaryYet: "No symptom diary entries yet",
+    noEntriesOnDate: "No entries on",
+    noObservationsRecorded: "No observations were recorded for this day.",
     diaryInfoEmpty:
       "Entries here include dose observation sessions and manual diary notes.",
     addDiaryEntry: "Add Diary Entry",
@@ -299,6 +304,9 @@ const translations = {
   ar: {
     appName: "فارما تيل",
     today: "اليوم",
+    yesterday: "أمس",
+    all: "الكل",
+    clear: "مسح",
     schedule: "الجدول",
     search: "بحث",
     diary: "اليومية",
@@ -477,6 +485,8 @@ const translations = {
     pharmacyTapCardHint: "اضغط على بطاقة لتحديد الصيدلية على الخريطة.",
     todayDosesEmpty: "لا توجد جرعات مجدولة اليوم.",
     noSymptomDiaryYet: "لا توجد مذكرات أعراض حتى الآن",
+    noEntriesOnDate: "لا توجد إدخالات في",
+    noObservationsRecorded: "لم يتم تسجيل ملاحظات لهذا اليوم.",
     diaryInfoEmpty:
       "تتضمن المدخلات هنا جلسات مراقبة الجرعات وملاحظات يومية يدوية.",
     addDiaryEntry: "إضافة إدخال يومي",

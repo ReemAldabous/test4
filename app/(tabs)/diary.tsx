@@ -17,34 +17,45 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { useApp } from "@/context/AppContext";
+import { getLocaleForLanguage, type TranslationKey } from "@/lib/i18n";
 import type { DiaryEntry, ObservationSession } from "@/models";
 import { getMetricDef, MOOD_LABELS } from "@/services/diaryMetrics";
 import { toLocalIso } from "@/utils/time";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
-function formatDate(dateStr: string) {
+function formatDate(
+  dateStr: string,
+  locale = "en-US",
+  todayLabel = "Today",
+  yesterdayLabel = "Yesterday",
+) {
   const d = new Date(dateStr + "T00:00:00");
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString("en-US", {
+  if (d.toDateString() === today.toDateString()) return todayLabel;
+  if (d.toDateString() === yesterday.toDateString()) return yesterdayLabel;
+  return d.toLocaleDateString(locale, {
     weekday: "long",
     month: "short",
     day: "numeric",
   });
 }
 
-function shortDate(dateStr: string) {
+function shortDate(
+  dateStr: string,
+  locale = "en-US",
+  todayLabel = "Today",
+  yesterdayLabel = "Yesterday",
+) {
   const d = new Date(dateStr + "T00:00:00");
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (d.toDateString() === today.toDateString()) return todayLabel;
+  if (d.toDateString() === yesterday.toDateString()) return yesterdayLabel;
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 function groupByDate(entries: DiaryEntry[]): Map<string, DiaryEntry[]> {
@@ -56,6 +67,52 @@ function groupByDate(entries: DiaryEntry[]): Map<string, DiaryEntry[]> {
   }
   return map;
 }
+
+const metricLabelKeys: Record<string, TranslationKey> = {
+  temperature: "temperature",
+  weight: "weight",
+  "heart rate": "heartRate",
+  heart_rate: "heartRate",
+  heartrate: "heartRate",
+  "bp systolic": "bpSystolic",
+  bp_systolic: "bpSystolic",
+  bpsystolic: "bpSystolic",
+  "bp diastolic": "bpDiastolic",
+  bp_diastolic: "bpDiastolic",
+  bpdiastolic: "bpDiastolic",
+  "blood oxygen": "bloodOxygen",
+  blood_oxygen: "bloodOxygen",
+  bloodoxygen: "bloodOxygen",
+  "blood sugar": "bloodSugar",
+  blood_sugar: "bloodSugar",
+  bloodsugar: "bloodSugar",
+  "pain level": "painLevel",
+  pain_level: "painLevel",
+  painlevel: "painLevel",
+  sleep: "sleep",
+  sleep_hours: "sleep",
+  "sleep hours": "sleep",
+  "water intake": "waterIntake",
+  water_intake: "waterIntake",
+  waterintake: "waterIntake",
+  steps: "steps",
+  "custom note": "customNote",
+  note: "customNote",
+};
+
+function getMetricLabelKey(metric: DiaryEntry["metrics"][number]) {
+  const typeKey = metric.type.trim().toLowerCase();
+  const labelKey = metric.label.trim().toLowerCase();
+  return metricLabelKeys[typeKey] ?? metricLabelKeys[labelKey];
+}
+
+const moodLabelKeys: Record<string, TranslationKey> = {
+  "Very Bad": "veryBad",
+  Bad: "bad",
+  Okay: "okay",
+  Good: "good",
+  Great: "great",
+};
 
 function parseMoodValue(value: string | number | boolean): number | undefined {
   if (typeof value === "number") {
@@ -265,9 +322,11 @@ const vStyles = StyleSheet.create({
 function MetricChip({
   metric,
   colors,
+  t,
 }: {
   metric: DiaryEntry["metrics"][number];
   colors: (typeof Colors)["light"];
+  t: (key: TranslationKey) => string;
 }) {
   const def = getMetricDef(metric.type);
   const color = def?.color ?? colors.primary;
@@ -289,7 +348,9 @@ function MetricChip({
         ) : null}
       </Text>
       <Text style={[tlStyles.chipLabel, { color: colors.textMuted }]}>
-        {metric.label}
+        {getMetricLabelKey(metric)
+          ? t(getMetricLabelKey(metric) as TranslationKey)
+          : metric.label}
       </Text>
     </View>
   );
@@ -301,6 +362,7 @@ function TimelineEntry({
   isLast,
   isLastOfDay,
   colors,
+  t,
   onEdit,
   onDelete,
 }: {
@@ -309,6 +371,7 @@ function TimelineEntry({
   isLast: boolean;
   isLastOfDay: boolean;
   colors: (typeof Colors)["light"];
+  t: (key: TranslationKey) => string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -384,7 +447,9 @@ function TimelineEntry({
                 >
                   <Text style={tlStyles.moodEmoji}>{mood.emoji}</Text>
                   <Text style={[tlStyles.moodText, { color: mood.color }]}>
-                    {mood.label}
+                    {moodLabelKeys[mood.label]
+                      ? t(moodLabelKeys[mood.label])
+                      : mood.label}
                   </Text>
                 </View>
               )}
@@ -405,7 +470,7 @@ function TimelineEntry({
           {entry.metrics.length > 0 && (
             <View style={tlStyles.metricsWrap}>
               {entry.metrics.map((m) => (
-                <MetricChip key={m.id} metric={m} colors={colors} />
+                <MetricChip key={m.id} metric={m} colors={colors} t={t} />
               ))}
             </View>
           )}
@@ -440,11 +505,17 @@ function DateSectionHeader({
   count,
   isFirst,
   colors,
+  locale,
+  todayLabel,
+  yesterdayLabel,
 }: {
   date: string;
   count: number;
   isFirst: boolean;
   colors: (typeof Colors)["light"];
+  locale: string;
+  todayLabel: string;
+  yesterdayLabel: string;
 }) {
   const isToday = date === toLocalIso();
   return (
@@ -475,7 +546,7 @@ function DateSectionHeader({
         <Text
           style={[dhStyles.pillText, { color: isToday ? "#fff" : colors.text }]}
         >
-          {formatDate(date)}
+          {formatDate(date, locale, todayLabel, yesterdayLabel)}
         </Text>
         <View
           style={[
@@ -698,8 +769,6 @@ type ListItem =
 
 /* ─── calendar picker modal ──────────────────────────────────────────────── */
 
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
 function CalendarModal({
   visible,
   selectedDate,
@@ -707,6 +776,9 @@ function CalendarModal({
   colors,
   onSelect,
   onClose,
+  locale,
+  cancelLabel,
+  clearLabel,
 }: {
   visible: boolean;
   selectedDate: string | null;
@@ -714,6 +786,9 @@ function CalendarModal({
   colors: (typeof Colors)["light"];
   onSelect: (date: string) => void;
   onClose: () => void;
+  locale: string;
+  cancelLabel: string;
+  clearLabel: string;
 }) {
   const todayStr = toLocalIso();
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
@@ -747,7 +822,7 @@ function CalendarModal({
   }, [viewYear, viewMonth]);
 
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
-    "en-US",
+    locale,
     {
       month: "long",
       year: "numeric",
@@ -789,7 +864,11 @@ function CalendarModal({
 
           {/* Weekday headers */}
           <View style={calStyles.row}>
-            {WEEKDAYS.map((wd) => (
+            {Array.from({ length: 7 }, (_, index) =>
+              new Date(2024, 0, 7 + index).toLocaleDateString(locale, {
+                weekday: "short",
+              }),
+            ).map((wd) => (
               <Text
                 key={wd}
                 style={[calStyles.wd, { color: colors.textMuted }]}
@@ -875,7 +954,7 @@ function CalendarModal({
               <Text
                 style={[calStyles.cancelText, { color: colors.textSecondary }]}
               >
-                Cancel
+                {cancelLabel}
               </Text>
             </Pressable>
             {selectedDate && (
@@ -894,7 +973,7 @@ function CalendarModal({
               >
                 <Feather name="x" size={13} color={colors.primary} />
                 <Text style={[calStyles.clearText, { color: colors.primary }]}>
-                  Clear
+                  {clearLabel}
                 </Text>
               </Pressable>
             )}
@@ -1034,6 +1113,9 @@ function DayPickerStrip({
   onOpenCalendar,
   entryDates,
   colors,
+  locale,
+  allLabel,
+  todayLabel,
 }: {
   days: string[];
   selectedDate: string | null;
@@ -1041,6 +1123,9 @@ function DayPickerStrip({
   onOpenCalendar: () => void;
   entryDates: Set<string>;
   colors: (typeof Colors)["light"];
+  locale: string;
+  allLabel: string;
+  todayLabel: string;
 }) {
   return (
     <View
@@ -1085,7 +1170,7 @@ function DayPickerStrip({
               { color: selectedDate === null ? "#fff" : colors.textSecondary },
             ]}
           >
-            All
+            {allLabel}
           </Text>
         </Pressable>
 
@@ -1095,10 +1180,10 @@ function DayPickerStrip({
           const dt = new Date(d + "T00:00:00");
           const isToday = d === toLocalIso();
           const dayName = isToday
-            ? "Today"
-            : dt.toLocaleDateString("en-US", { weekday: "short" });
+            ? todayLabel
+            : dt.toLocaleDateString(locale, { weekday: "short" });
           const dayNum = dt.getDate();
-          const monthAbbr = dt.toLocaleDateString("en-US", { month: "short" });
+          const monthAbbr = dt.toLocaleDateString(locale, { month: "short" });
 
           return (
             <Pressable
@@ -1273,8 +1358,14 @@ export default function DiaryScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const insets = useSafeAreaInsets();
-  const { observationSessions, patient, removeObservationSession, t } =
-    useApp();
+  const {
+    observationSessions,
+    patient,
+    removeObservationSession,
+    t,
+    language,
+  } = useApp();
+  const locale = getLocaleForLanguage(language);
   const observationDiaryEntries = useMemo(
     () => mapObservationSessionsToDiaryEntries(observationSessions),
     [observationSessions],
@@ -1441,7 +1532,7 @@ export default function DiaryScreen() {
           <View>
             <Text style={styles.heroTitle}>{t("healthDiary")}</Text>
             <Text style={styles.heroSub}>
-              {new Date().toLocaleDateString("en-US", {
+              {new Date().toLocaleDateString(locale, {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
@@ -1490,6 +1581,9 @@ export default function DiaryScreen() {
         onOpenCalendar={() => setShowCalendar(true)}
         entryDates={entryDates}
         colors={colors}
+        locale={locale}
+        allLabel={t("all")}
+        todayLabel={t("today")}
       />
 
       {/* ── calendar modal ── */}
@@ -1498,6 +1592,9 @@ export default function DiaryScreen() {
         selectedDate={selectedDate}
         entryDates={entryDates}
         colors={colors}
+        locale={locale}
+        cancelLabel={t("cancel")}
+        clearLabel={t("clear")}
         onSelect={(date) => setSelectedDate(date)}
         onClose={() => setShowCalendar(false)}
       />
@@ -1527,13 +1624,16 @@ export default function DiaryScreen() {
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               {selectedDate
-                ? `No entries on ${shortDate(selectedDate)}`
-                : "No symptom diary entries yet"}
+                ? `${t("noEntriesOnDate")} ${shortDate(
+                    selectedDate,
+                    locale,
+                    t("today"),
+                    t("yesterday"),
+                  )}`
+                : t("noSymptomDiaryYet")}
             </Text>
             <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
-              {selectedDate
-                ? "No observations were recorded for this day."
-                : "Entries here include dose observation sessions and manual diary notes."}
+              {selectedDate ? t("noObservationsRecorded") : t("diaryInfoEmpty")}
             </Text>
             <View style={styles.emptyActions}>
               {selectedDate && (
@@ -1555,7 +1655,7 @@ export default function DiaryScreen() {
                       { color: colors.textSecondary },
                     ]}
                   >
-                    Show All
+                    {t("all")}
                   </Text>
                 </Pressable>
               )}
@@ -1570,6 +1670,9 @@ export default function DiaryScreen() {
                 count={item.count}
                 isFirst={item.isFirst}
                 colors={colors}
+                locale={locale}
+                todayLabel={t("today")}
+                yesterdayLabel={t("yesterday")}
               />
             );
           }
@@ -1580,6 +1683,7 @@ export default function DiaryScreen() {
               isLast={item.isAbsLast}
               isLastOfDay={item.isLastOfDay}
               colors={colors}
+              t={t}
               onEdit={() => openEntry(item.entry.id)}
               onDelete={() => handleDelete(item.entry.id)}
             />
