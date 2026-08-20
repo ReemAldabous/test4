@@ -616,6 +616,10 @@ const tlStyles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.3,
+    minWidth: 52,
+    flexShrink: 0,
+    writingDirection: "ltr",
+    textAlign: "left",
   },
   moodPill: {
     flexDirection: "row",
