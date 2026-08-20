@@ -81,7 +81,7 @@ const translations = {
     takenAt: "Taken At",
     yourNote: "Your Note",
     prescribedByLabel: "Prescribed by",
-    firstDoseTime: "First dose time",
+    firstDoseTime: "Delay taking the dose",
     setTimeShiftAfterCreate:
       "After saving, open the prescription and set the first dose time to schedule reminders.",
     saveTimeShift: "Save dose time",
@@ -375,7 +375,7 @@ const translations = {
     takenAt: "وقت التناول",
     yourNote: "ملاحظتك",
     prescribedByLabel: "وُصفت بواسطة",
-    firstDoseTime: "وقت الجرعة الأولى",
+    firstDoseTime: "تأجيل تناول الحبة",
     setTimeShiftAfterCreate:
       "بعد الحفظ، افتح الوصفة وحدّد وقت الجرعة الأولى لتفعيل التذكيرات.",
     saveTimeShift: "حفظ وقت الجرعة",

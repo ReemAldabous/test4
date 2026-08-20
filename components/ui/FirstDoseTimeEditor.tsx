@@ -11,15 +11,16 @@ import {
 import type Colors from "@/constants/colors";
 
 const TIME_PRESETS = [
+  "01:00",
+  "02:00",
+  "03:00",
+  "04:00",
+  "05:00",
   "06:00",
   "07:00",
   "08:00",
   "09:00",
-  "12:00",
-  "14:00",
-  "18:00",
-  "20:00",
-  "21:00",
+  "10:00",
 ];
 
 type Props = {
@@ -94,7 +95,8 @@ export function FirstDoseTimeEditor({ value, onChange, colors, label }: Props) {
                 {
                   backgroundColor:
                     value === preset ? colors.primary : colors.surfaceSecondary,
-                  borderColor: value === preset ? colors.primary : colors.border,
+                  borderColor:
+                    value === preset ? colors.primary : colors.border,
                 },
               ]}
             >
