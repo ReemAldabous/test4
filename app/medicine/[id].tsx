@@ -50,7 +50,7 @@ export default function MedicineDetailScreen() {
     setFirstDoseTime(
       hasConfiguredTimeShift(prescription)
         ? shiftToTimeString(prescription.timeShift!)
-        : "08:00",
+        : "01:00",
     );
   }, [prescription?.id, prescription?.timeShift]);
 
@@ -192,7 +192,7 @@ export default function MedicineDetailScreen() {
               Alert.alert(t("markPrescriptionDone"), "", [
                 { text: t("cancel"), style: "cancel" },
                 {
-                  text: t("remove"),
+                  text: t("yes"),
                   onPress: () => {
                     void markPrescriptionDone(prescription.id);
                   },

@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "Inter_500Medium",
     flex: 1,
     textAlign: "right",

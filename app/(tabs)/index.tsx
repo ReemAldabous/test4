@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
   },
   patientName: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   date: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
@@ -314,6 +314,8 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     gap: 16,
+    
+
   },
   progressCard: {
     borderRadius: 20,
@@ -375,11 +377,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   chipCount: {
-    fontSize: 22,
+    fontSize: 26,
     fontFamily: "Inter_700Bold",
   },
   chipLabel: {
-    fontSize: 12,
+    fontSize: 15,
     fontFamily: "Inter_500Medium",
   },
   sectionTitle: {
