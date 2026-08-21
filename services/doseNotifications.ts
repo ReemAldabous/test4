@@ -98,7 +98,7 @@ export async function syncDoseReminderNotifications(
     }
     if (finalStatus !== "granted") {
       console.warn(
-        "Dose notifications permission was not granted:",
+        "Dose notifications permission was not granted. Enable notifications for PharmaTel in Android settings:",
         finalStatus,
       );
       return;

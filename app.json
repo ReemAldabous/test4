@@ -24,7 +24,12 @@
       }
     },
     "android": {
-      "package": "com.anonymous.pharmatel"
+      "package": "com.anonymous.pharmatel",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -56,6 +61,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://replit.com/"
+      },
+      "eas": {
+        "projectId": "aa1ea19e-9a82-43a3-8973-73b4f1f65f60"
+      }
     }
   }
 }
