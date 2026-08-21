@@ -19,7 +19,7 @@ import { useApp } from "@/context/AppContext";
 import { getLocaleForLanguage, type TranslationKey } from "@/lib/i18n";
 import type { DiaryEntry, ObservationSession } from "@/models";
 import { getMetricDef, MOOD_LABELS } from "@/services/diaryMetrics";
-import { exportTextFile } from "@/services/fileExport";
+import { exportHtmlFile } from "@/services/fileExport";
 import { toLocalIso } from "@/utils/time";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -214,28 +214,46 @@ function mapObservationSessionsToDiaryEntries(
     });
 }
 
-function buildShareText(entries: DiaryEntry[], patientName: string): string {
-  if (entries.length === 0) return "No diary entries to share.";
-  let text = `Health Diary — ${patientName}\n`;
-  text += `Exported: ${new Date().toLocaleDateString("en-US", { dateStyle: "full" })}\n`;
-  text += "─".repeat(40) + "\n\n";
+function buildDiaryHtml(entries: DiaryEntry[], patientName: string): string {
+  const escapeHtml = (value: unknown) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  const exportedDate = new Date().toLocaleDateString("en-US", {
+    dateStyle: "full",
+  });
+  let html = `<!doctype html><html><head><meta charset="utf-8"><title>PharmaTel Health Diary</title><style>
+    body{font-family:Arial,sans-serif;background:#f4f7f7;color:#203333;margin:0;padding:32px}.report{max-width:760px;margin:auto}
+    .hero{background:#0d9488;color:white;padding:28px;border-radius:16px;margin-bottom:20px}h1{margin:0 0 12px;font-size:26px}.meta{opacity:.9}
+    .date{color:#dc2626;font-weight:700}.day{background:white;border:1px solid #d9e5e3;border-radius:12px;padding:20px;margin:14px 0;box-shadow:0 3px 12px #1231}
+    h2{margin:0 0 12px;color:#0d766d;font-size:19px}.entry{border-top:1px solid #e5eeee;padding:12px 0}.entry:first-of-type{border-top:0}.row{padding:5px 0}.icon{display:inline-block;width:28px}
+  </style></head><body><main class="report"><header class="hero"><h1>📔 PharmaTel | Health Diary</h1><div class="meta">👤 Patient: ${escapeHtml(patientName)}<br>📅 Exported: <span class="date">${escapeHtml(exportedDate)}</span><br>📋 Total entries: ${entries.length}</div></header>`;
+  if (entries.length === 0)
+    return `${html}<section class="day">No diary entries available.</section></main></body></html>`;
+
   const grouped = groupByDate(entries);
   for (const [date, dayEntries] of grouped) {
-    text += `📅 ${formatDate(date)}\n`;
+    html += `<section class="day"><h2>📅 <span class="date">${escapeHtml(formatDate(date))}</span> <small>(${escapeHtml(date)})</small></h2>`;
     for (const entry of dayEntries) {
-      text += `  ⏰ ${entry.time}\n`;
+      html += `<div class="entry"><div class="row"><span class="icon">⏰</span><b>Time:</b> ${escapeHtml(entry.time)}</div>`;
       if (entry.mood) {
         const m = MOOD_LABELS[entry.mood];
-        text += `  Mood: ${m.emoji} ${m.label}\n`;
+        html += `<div class="row"><span class="icon">🙂</span><b>Mood:</b> ${escapeHtml(m.label)}</div>`;
       }
       for (const metric of entry.metrics) {
-        text += `  ${metric.label}: ${metric.value}${metric.unit ? " " + metric.unit : ""}\n`;
+        html += `<div class="row"><span class="icon">📊</span><b>${escapeHtml(metric.label)}:</b> ${escapeHtml(metric.value)}${metric.unit ? ` ${escapeHtml(metric.unit)}` : ""}</div>`;
       }
-      if (entry.generalNotes) text += `  Notes: ${entry.generalNotes}\n`;
-      text += "\n";
+      if (entry.generalNotes) {
+        html += `<div class="row"><span class="icon">📝</span><b>Notes:</b> ${escapeHtml(entry.generalNotes)}</div>`;
+      }
+      html += "</div>";
     }
+    html += "</section>";
   }
-  return text;
+  return `${html}</main></body></html>`;
 }
 
 /* ─── vitals header card ─────────────────────────────────────────────────── */
@@ -1464,11 +1482,11 @@ export default function DiaryScreen() {
       const entriesToShare = selectedDate
         ? diaryEntries.filter((e) => e.date === selectedDate)
         : diaryEntries;
-      const text = buildShareText(
+      const html = buildDiaryHtml(
         entriesToShare,
         patient?.name ?? t("patient"),
       );
-      await exportTextFile("pharmatel-diary.txt", text);
+      await exportHtmlFile("pharmatel-diary.html", html);
     } catch (error) {
       const message =
         error instanceof Error && error.message ? error.message : t("error");

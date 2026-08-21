@@ -17,37 +17,55 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { PrescriptionCard } from "@/components/PrescriptionCard";
 import { useApp } from "@/context/AppContext";
-import { exportTextFile } from "@/services/fileExport";
+import { exportHtmlFile } from "@/services/fileExport";
 
-function buildPrescriptionsText(
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buildPrescriptionsHtml(
   prescriptions: ReturnType<typeof useApp>["prescriptions"],
 ): string {
-  let text = "PharmaTel Prescriptions\n";
-  text += `Exported: ${new Date().toLocaleDateString("en-US", { dateStyle: "full" })}\n`;
-  text += "=".repeat(40) + "\n\n";
+  const exportedDate = new Date().toLocaleDateString("en-US", {
+    dateStyle: "full",
+  });
+  let html = `<!doctype html><html><head><meta charset="utf-8"><title>PharmaTel Prescriptions</title><style>
+    body{font-family:Arial,sans-serif;background:#f4f7f7;color:#203333;margin:0;padding:32px}
+    .report{max-width:760px;margin:auto}.hero{background:#0d9488;color:white;padding:28px;border-radius:16px;margin-bottom:20px}
+    h1{margin:0 0 12px;font-size:26px}.meta{opacity:.9}.date{color:#dc2626;font-weight:700}.card{background:white;border:1px solid #d9e5e3;border-radius:12px;padding:20px;margin:14px 0;box-shadow:0 3px 12px #1231  }
+    h2{margin:0 0 14px;color:#0d766d;font-size:20px}.row{padding:6px 0}.icon{display:inline-block;width:28px}.schedule{border-top:1px solid #e5eeee;margin-top:14px;padding-top:12px;color:#526565}
+  </style></head><body><main class="report"><header class="hero"><h1>💊 PharmaTel | Prescription Report</h1><div class="meta">📅 Exported: <span class="date">${escapeHtml(exportedDate)}</span><br>📋 Total prescriptions: ${prescriptions.length}</div></header>`;
 
-  for (const prescription of prescriptions) {
-    text += `${prescription.medicine.name}`;
-    if (prescription.medicine.strength)
-      text += ` (${prescription.medicine.strength})`;
-    text += "\n";
-    text += `Dose: ${prescription.dose}\n`;
-    text += `Frequency: ${prescription.frequency}\n`;
-    text += `Dates: ${prescription.startDate} - ${prescription.endDate ?? "ongoing"}\n`;
-    text += `Prescribed by: ${prescription.prescribedBy}\n`;
-    if (prescription.note ?? prescription.notes) {
-      text += `Notes: ${prescription.note ?? prescription.notes}\n`;
-    }
-    if (prescription.doseSchedules.length > 0) {
-      text += "Dose schedule:\n";
-      for (const dose of prescription.doseSchedules) {
-        text += `  ${dose.takeAt ?? dose.scheduledTime} - ${dose.status}\n`;
-      }
-    }
-    text += "\n";
+  if (prescriptions.length === 0) {
+    return `${html}<section class="card">No prescriptions available.</section></main></body></html>`;
   }
 
-  return text;
+  prescriptions.forEach((prescription, index) => {
+    html += `<section class="card"><h2>${index + 1}. ${escapeHtml(prescription.medicine.name)}${prescription.medicine.strength ? ` (${escapeHtml(prescription.medicine.strength)})` : ""}</h2>`;
+    html += `<div class="row"><span class="icon">💧</span><b>Dose:</b> ${escapeHtml(prescription.dose)}</div>`;
+    html += `<div class="row"><span class="icon">🔁</span><b>Frequency:</b> ${escapeHtml(prescription.frequency)}</div>`;
+    html += `<div class="row"><span class="icon">📅</span><b>Start date:</b> <span class="date">${escapeHtml(prescription.startDate)}</span></div>`;
+    html += `<div class="row"><span class="icon">📅</span><b>End date:</b> <span class="date">${escapeHtml(prescription.endDate ?? "Ongoing")}</span></div>`;
+    html += `<div class="row"><span class="icon">👨‍⚕️</span><b>Prescribed by:</b> ${escapeHtml(prescription.prescribedBy)}</div>`;
+    if (prescription.note ?? prescription.notes) {
+      html += `<div class="row"><span class="icon">📝</span><b>Notes:</b> ${escapeHtml(prescription.note ?? prescription.notes)}</div>`;
+    }
+    if (prescription.doseSchedules.length > 0) {
+      html += `<div class="schedule"><b>⏰ Dose schedule</b>`;
+      for (const dose of prescription.doseSchedules) {
+        html += `<div class="row">▫️ ${escapeHtml(dose.takeAt ?? dose.scheduledTime)} | ${escapeHtml(dose.status)}</div>`;
+      }
+      html += "</div>";
+    }
+    html += "</section>";
+  });
+
+  return `${html}</main></body></html>`;
 }
 
 export default function PrescriptionsScreen() {
@@ -78,9 +96,9 @@ export default function PrescriptionsScreen() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportTextFile(
-        "pharmatel-prescriptions.txt",
-        buildPrescriptionsText(prescriptions),
+      await exportHtmlFile(
+        "pharmatel-prescriptions.html",
+        buildPrescriptionsHtml(prescriptions),
       );
     } catch (error) {
       const message =
