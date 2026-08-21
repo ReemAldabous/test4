@@ -1059,35 +1059,19 @@ export default function NewPrescriptionScreen() {
               >
                 {t("startDateRequired")}
               </Text>
+              
               <DateTimeField
                 value={startDate}
                 onChange={(iso: string) => setStartDate(iso)}
                 mode="datetime"
                 placeholder="YYYY-MM-DD HH:MM"
-                icon="calendar"
+                icon="📅calendar"
                 colors={colors}
               />
 
               <SectionHeader title={t("additionalDetails")} colors={colors} />
 
-              {!isEdit && (
-                <View
-                  style={[
-                    styles.asNeededNote,
-                    {
-                      backgroundColor: colors.primary + "10",
-                      borderColor: colors.primary + "25",
-                    },
-                  ]}
-                >
-                  <Feather name="clock" size={15} color={colors.primary} />
-                  <Text
-                    style={[styles.asNeededText, { color: colors.primary }]}
-                  >
-                    {t("setTimeShiftAfterCreate")}
-                  </Text>
-                </View>
-              )}
+           
 
               <Pressable
                 onPress={() => setByDoctor((v) => !v)}
