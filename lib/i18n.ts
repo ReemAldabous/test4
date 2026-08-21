@@ -86,9 +86,9 @@ const translations = {
     prescribedByLabel: "Prescribed by",
     firstDoseTime: "Delay taking the dose",
     setTimeShiftAfterCreate:
-      "After saving, open the prescription and set the first dose time to schedule reminders.",
+      "After saving, open the prescription and set the shift dose time to delay taking the dose",
     saveTimeShift: "Save dose time",
-    timeShiftNotSet: "Set the first dose time to enable dose reminders.",
+    timeShiftNotSet: "Set the shift dose time to delay the dose",
     prescribedByDoctor: "Prescribed by a doctor",
     doctorName: "Doctor name",
     markPrescriptionDone: "Mark prescription as finished",
@@ -169,7 +169,7 @@ const translations = {
     medicationNameRequired: "Medication name *",
     exampleMedicationName: "e.g. Paracetamol",
     doseTimeBackendMessage:
-      "Dose times are generated automatically by the backend based on frequency and dates.",
+      "Dose times are generated automatically based on frequency and date",
     summaryTitle: "Summary",
     startsLabel: "Starts",
     notesOptional: "Notes (optional)",
@@ -212,7 +212,7 @@ const translations = {
     starts: "Starts",
     saving: "Saving...",
     doseTimesGeneratedByBackend:
-      "Dose times are generated automatically by the backend based on frequency and dates.",
+      "Dose times are generated automatically ",
     taken: "Taken",
     missed: "Missed",
     pending: "Pending",
@@ -342,7 +342,7 @@ const translations = {
     welcomeFeature1: "إدارة الجرعات واليومية والصيدليات في مكان واحد.",
     welcomeFeature2: "متابعة الوصفات مع تذكيرات وملاحظات واضحة.",
     welcomeFeature3:
-      "اعثر على الصيدليات القريبة بسرعة عند الحاجةة.",
+      "اعثر على الصيدليات القريبة بسرعة عند الحاجة.",
     smartNotifications: "الإشعارات الذكية",
     healthAnalytics: "تحليلات الصحة",
     smartLocation: "الموقع الذكي",
@@ -385,9 +385,9 @@ const translations = {
     prescribedByLabel: "وُصفت بواسطة",
     firstDoseTime: "تأجيل تناول الحبة",
     setTimeShiftAfterCreate:
-      "بعد الحفظ، افتح الوصفة وحدّد وقت الجرعة الأولى لتفعيل التذكيرات.",
+      "بعد الحفظ، افتح الوصفة بامكانك تاخير تناول الجرعة" ,
     saveTimeShift: "حفظ وقت الجرعة",
-    timeShiftNotSet: "حدّد وقت الجرعة الأولى لتفعيل التذكيرات.",
+    timeShiftNotSet: "يمكنك تاخير تناول الجرعة ",
     prescribedByDoctor: "وُصفت من طبيب",
     doctorName: "اسم الطبيب",
     markPrescriptionDone: "إنهاء الوصفة",
