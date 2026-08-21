@@ -370,7 +370,7 @@ export default function WelcomeScreen() {
           </LinearGradient>
           <View style={styles.featureContent}>
             <Text style={[styles.featureTitle, { color: colors.text }]}>
-              🗺️ {t("smartLocator")}
+              🗺️ {t("smartLocation")}
             </Text>
             <Text style={[styles.featureDesc, { color: colors.textSecondary }]}>
               {t("welcomeFeature3")}

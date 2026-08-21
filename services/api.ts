@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const DEFAULT_API_BASE_URL = "http://10.56.177.234:8080/api";
+const DEFAULT_API_BASE_URL = "http://localhost:8080/api";
 
 export function getApiBaseUrl(): string {
   const envBaseUrl =

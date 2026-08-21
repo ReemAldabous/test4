@@ -93,9 +93,6 @@ export default function SignUpScreen() {
           <Text style={[styles.appName, { color: colors.text }]}>
             {t("createAccountTitle")}
           </Text>
-          <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-            {t("createAccountSubtitle")}
-          </Text>
         </View>
 
         <View
@@ -112,7 +109,7 @@ export default function SignUpScreen() {
             label={t("username")}
             value={username}
             onChangeText={setUsername}
-            placeholder="john.doe"
+            placeholder="Enter username"
             icon="user"
             colors={colors}
             autoCapitalize="none"
@@ -143,7 +140,7 @@ export default function SignUpScreen() {
                 label={t("fullName")}
                 value={name}
                 onChangeText={setName}
-                placeholder="John Doe"
+                placeholder="Enter fullname"
                 icon="file-text"
                 colors={colors}
               />
@@ -207,12 +204,12 @@ export default function SignUpScreen() {
 
           <Pressable
             onPress={handleRegister}
-            disabled={loading || !canSubmit}
+            disabled={loading}
             style={({ pressed }) => [
               styles.submitBtn,
               {
                 backgroundColor: colors.primary,
-                opacity: pressed || loading || !canSubmit ? 0.85 : 1,
+                opacity: pressed || loading ? 0.85 : 1,
               },
             ]}
           >

@@ -71,9 +71,7 @@ export default function LoginScreen() {
           <Text style={[styles.appName, { color: colors.text }]}>
             {t("appName")}
           </Text>
-          <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-            {t("welcomeTagline")}
-          </Text>
+        
         </View>
 
         {/* Card */}
@@ -112,7 +110,7 @@ export default function LoginScreen() {
               <TextInput
                 value={username}
                 onChangeText={setUsername}
-                placeholder="john.doe"
+                placeholder="Enter username"
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
