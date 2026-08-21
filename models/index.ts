@@ -3,6 +3,7 @@ export interface Patient {
   username: string;
   name: string;
   dateOfBirth?: string;
+  profileImageUri?: string;
   token?: string;
 }
 

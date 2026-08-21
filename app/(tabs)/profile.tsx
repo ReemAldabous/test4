@@ -1,7 +1,10 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React from "react";
 import {
+  Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -19,7 +22,17 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const insets = useSafeAreaInsets();
-  const { patient, logout, prescriptions, observationSessions, language, setLanguage, locale, t } = useApp();
+  const {
+    patient,
+    logout,
+    prescriptions,
+    observationSessions,
+    language,
+    setLanguage,
+    locale,
+    t,
+    updatePatientProfileImage,
+  } = useApp();
   const topPadding = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   const handleLogout = async () => {
@@ -27,8 +40,30 @@ export default function ProfileScreen() {
     router.replace("/login");
   };
 
+  const handlePickProfileImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access to choose a profile image.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      await updatePatientProfileImage(result.assets[0].uri);
+    }
+  };
+
   const activePrescriptions = prescriptions.filter(
-    (rx) => !rx.endDate || new Date(rx.endDate) >= new Date()
+    (rx) => !rx.endDate || new Date(rx.endDate) >= new Date(),
   );
   const takenDoses = prescriptions
     .flatMap((rx) => rx.doseSchedules)
@@ -36,8 +71,19 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPadding, backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
-        <Text style={[styles.title, { color: colors.text }]}>{t("profile")}</Text>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: topPadding,
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.borderLight,
+          },
+        ]}
+      >
+        <Text style={[styles.title, { color: colors.text }]}>
+          {t("profile")}
+        </Text>
       </View>
 
       <ScrollView
@@ -47,17 +93,26 @@ export default function ProfileScreen() {
       >
         {/* Profile card */}
         <View style={[styles.profileCard, { backgroundColor: colors.primary }]}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {patient?.name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2) ?? "P"}
-            </Text>
-          </View>
+          <Pressable style={styles.avatar} onPress={handlePickProfileImage}>
+            {patient?.profileImageUri ? (
+              <Image
+                source={{ uri: patient.profileImageUri }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {patient?.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2) ?? "P"}
+              </Text>
+            )}
+          </Pressable>
           <Text style={styles.patientName}>{patient?.name ?? "Patient"}</Text>
-          <Text style={styles.patientUsername}>@{patient?.username ?? "unknown"}</Text>
+          <Text style={styles.patientUsername}>
+            @{patient?.username ?? "unknown"}
+          </Text>
           {patient?.dateOfBirth && (
             <Text style={styles.dob}>
               DOB: {formatDate(patient.dateOfBirth, locale)}
@@ -88,21 +143,30 @@ export default function ProfileScreen() {
         </View>
 
         {/* Menu items */}
-        <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.menuCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <MenuItem
             icon="file-text"
             label={t("myPrescriptions")}
             colors={colors}
             onPress={() => router.push("/(tabs)/prescriptions")}
           />
-          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+          <View
+            style={[styles.divider, { backgroundColor: colors.borderLight }]}
+          />
           <MenuItem
             icon="book"
             label={t("symptomDiary")}
             colors={colors}
             onPress={() => router.push("/(tabs)/diary")}
           />
-          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+          <View
+            style={[styles.divider, { backgroundColor: colors.borderLight }]}
+          />
           <MenuItem
             icon="bell"
             label={t("upcomingDoses")}
@@ -111,14 +175,28 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
+        <View
+          style={[
+            styles.menuCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.menuItem}>
-            <View style={[styles.menuIcon, { backgroundColor: colors.primary + "15" }]}>
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
               <Feather name="globe" size={18} color={colors.primary} />
             </View>
             <View style={styles.menuTextGroup}>
-              <Text style={[styles.menuLabel, { color: colors.text }]}>{t("languageLabel")}</Text>
-              <Text style={[styles.menuSub, { color: colors.textMuted }]}>{t("changesApplyImmediately")}</Text>
+              <Text style={[styles.menuLabel, { color: colors.text }]}>
+                {t("languageLabel")}
+              </Text>
+              <Text style={[styles.menuSub, { color: colors.textMuted }]}>
+                {t("changesApplyImmediately")}
+              </Text>
             </View>
           </View>
           <View style={styles.languageRow}>
@@ -127,12 +205,20 @@ export default function ProfileScreen() {
               style={[
                 styles.languageChip,
                 {
-                  backgroundColor: language === "en" ? colors.primary : colors.surfaceSecondary,
+                  backgroundColor:
+                    language === "en"
+                      ? colors.primary
+                      : colors.surfaceSecondary,
                   borderColor: colors.border,
                 },
               ]}
             >
-              <Text style={{ color: language === "en" ? "#fff" : colors.textSecondary, fontFamily: "Inter_600SemiBold" }}>
+              <Text
+                style={{
+                  color: language === "en" ? "#fff" : colors.textSecondary,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
                 {t("english")}
               </Text>
             </Pressable>
@@ -141,12 +227,20 @@ export default function ProfileScreen() {
               style={[
                 styles.languageChip,
                 {
-                  backgroundColor: language === "ar" ? colors.primary : colors.surfaceSecondary,
+                  backgroundColor:
+                    language === "ar"
+                      ? colors.primary
+                      : colors.surfaceSecondary,
                   borderColor: colors.border,
                 },
               ]}
             >
-              <Text style={{ color: language === "ar" ? "#fff" : colors.textSecondary, fontFamily: "Inter_600SemiBold" }}>
+              <Text
+                style={{
+                  color: language === "ar" ? "#fff" : colors.textSecondary,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
                 {t("arabic")}
               </Text>
             </Pressable>
@@ -154,14 +248,28 @@ export default function ProfileScreen() {
         </View>
 
         {/* App info */}
-        <View style={[styles.menuCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.menuCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.menuItem}>
-            <View style={[styles.menuIcon, { backgroundColor: colors.primary + "15" }]}>
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
               <Feather name="info" size={18} color={colors.primary} />
             </View>
             <View style={styles.menuTextGroup}>
-              <Text style={[styles.menuLabel, { color: colors.text }]}>{t("appVersion")}</Text>
-              <Text style={[styles.menuSub, { color: colors.textMuted }]}>1.0.0</Text>
+              <Text style={[styles.menuLabel, { color: colors.text }]}>
+                {t("appVersion")}
+              </Text>
+              <Text style={[styles.menuSub, { color: colors.textMuted }]}>
+                1.0.0
+              </Text>
             </View>
           </View>
         </View>
@@ -179,7 +287,9 @@ export default function ProfileScreen() {
           ]}
         >
           <Feather name="log-out" size={18} color={colors.error} />
-          <Text style={[styles.logoutText, { color: colors.error }]}>{t("signOut")}</Text>
+          <Text style={[styles.logoutText, { color: colors.error }]}>
+            {t("signOut")}
+          </Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -198,10 +308,17 @@ function StatCard({
   colors: any;
 }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.statCard,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
+    >
       <Feather name={icon as any} size={18} color={colors.primary} />
       <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -222,13 +339,18 @@ function MenuItem({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.menuItem, { opacity: pressed ? 0.75 : 1 }]}
+      style={({ pressed }) => [
+        styles.menuItem,
+        { opacity: pressed ? 0.75 : 1 },
+      ]}
     >
       <View
         style={[
           styles.menuIcon,
           {
-            backgroundColor: destructive ? colors.error + "15" : colors.primary + "15",
+            backgroundColor: destructive
+              ? colors.error + "15"
+              : colors.primary + "15",
           },
         ]}
       >
@@ -289,6 +411,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 28,
     fontFamily: "Inter_700Bold",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
   },
   patientName: {
     color: "#fff",

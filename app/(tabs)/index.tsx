@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -60,7 +61,9 @@ export default function TodayScreen() {
     });
   }, [prescriptions]);
 
-  const taken = todayDoses.filter((d) => d.doseSchedule.status === "taken").length;
+  const taken = todayDoses.filter(
+    (d) => d.doseSchedule.status === "taken",
+  ).length;
   const total = todayDoses.length;
   const progress = total > 0 ? taken / total : 0;
 
@@ -78,7 +81,7 @@ export default function TodayScreen() {
     await markDoseTaken(
       modalData.prescription.id,
       modalData.doseSchedule.id,
-      note
+      note,
     );
     setModalData(null);
   };
@@ -87,7 +90,9 @@ export default function TodayScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.loadingScreen, { backgroundColor: colors.background }]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
           {t("loading")}
@@ -102,14 +107,27 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
         }
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         {/* Header */}
-        <View style={[styles.header, { paddingTop: topPadding, backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              paddingTop: topPadding,
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.borderLight,
+            },
+          ]}
+        >
           <View>
-              <Text style={[styles.greeting, { color: colors.textSecondary }]}> 
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
               {t(getGreetingKey())},
             </Text>
             <Text style={[styles.patientName, { color: colors.text }]}>
@@ -123,13 +141,20 @@ export default function TodayScreen() {
             onPress={() => router.push("/profile")}
             style={[styles.avatar, { backgroundColor: colors.primary }]}
           >
-            <Text style={styles.avatarText}>
-              {patient?.name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2) ?? "P"}
-            </Text>
+            {patient?.profileImageUri ? (
+              <Image
+                source={{ uri: patient.profileImageUri }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {patient?.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2) ?? "P"}
+              </Text>
+            )}
           </Pressable>
         </View>
 
@@ -154,7 +179,12 @@ export default function TodayScreen() {
                 </Text>
               </View>
             </View>
-            <View style={[styles.progressBar, { backgroundColor: "rgba(255,255,255,0.25)" }]}>
+            <View
+              style={[
+                styles.progressBar,
+                { backgroundColor: "rgba(255,255,255,0.25)" },
+              ]}
+            >
               <View
                 style={[
                   styles.progressFill,
@@ -174,27 +204,40 @@ export default function TodayScreen() {
             />
             <SummaryChip
               label={t("missed")}
-              count={todayDoses.filter((d) => d.doseSchedule.status === "missed").length}
+              count={
+                todayDoses.filter((d) => d.doseSchedule.status === "missed")
+                  .length
+              }
               color={colors.missed}
               bg={colors.missedBg}
             />
             <SummaryChip
               label={t("pending")}
-              count={todayDoses.filter((d) => d.doseSchedule.status === "pending").length}
+              count={
+                todayDoses.filter((d) => d.doseSchedule.status === "pending")
+                  .length
+              }
               color={colors.pending}
               bg={colors.pendingBg}
             />
           </View>
 
           {/* Doses list */}
-          <Text style={[styles.sectionTitle, { color: colors.text }]}> 
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {t("todaysDoses")}
           </Text>
 
           {todayDoses.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View
+              style={[
+                styles.emptyState,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
               <Feather name="check-circle" size={40} color={colors.success} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t("allDone")}</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                {t("allDone")}
+              </Text>
               <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
                 {t("todayDosesEmpty")}
               </Text>
@@ -311,11 +354,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 22,
+  },
   content: {
     padding: 20,
     gap: 16,
-    
-
   },
   progressCard: {
     borderRadius: 20,

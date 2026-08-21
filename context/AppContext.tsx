@@ -73,6 +73,7 @@ interface AppContextValue {
   } | null;
   dismissDoseNotification: () => void;
   setLanguage: (language: Language) => Promise<void>;
+  updatePatientProfileImage: (profileImageUri: string) => Promise<void>;
   t: (key: TranslationKey, params?: TranslationParams) => string;
   login: (
     username: string,
@@ -739,6 +740,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem("preferredLanguage", nextLanguage);
   }, []);
 
+  const updatePatientProfileImage = useCallback(
+    async (profileImageUri: string) => {
+      if (!patient) return;
+      const updatedPatient = { ...patient, profileImageUri };
+      await AsyncStorage.setItem("patient", JSON.stringify(updatedPatient));
+      setPatient(updatedPatient);
+    },
+    [patient],
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -754,6 +765,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         currentDoseNotification,
         dismissDoseNotification,
         setLanguage,
+        updatePatientProfileImage,
         t,
         login,
         logout,
