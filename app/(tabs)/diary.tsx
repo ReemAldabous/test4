@@ -8,7 +8,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
@@ -20,6 +19,7 @@ import { useApp } from "@/context/AppContext";
 import { getLocaleForLanguage, type TranslationKey } from "@/lib/i18n";
 import type { DiaryEntry, ObservationSession } from "@/models";
 import { getMetricDef, MOOD_LABELS } from "@/services/diaryMetrics";
+import { exportTextFile } from "@/services/fileExport";
 import { toLocalIso } from "@/utils/time";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -1458,7 +1458,7 @@ export default function DiaryScreen() {
   );
   const todayCount = diaryEntries.filter((e) => e.date === todayStr).length;
 
-  const handleShare = async () => {
+  const handleExport = async () => {
     setIsSharing(true);
     try {
       const entriesToShare = selectedDate
@@ -1468,8 +1468,11 @@ export default function DiaryScreen() {
         entriesToShare,
         patient?.name ?? t("patient"),
       );
-      await Share.share({ message: text, title: t("healthDiary") });
-    } catch (_) {
+      await exportTextFile("pharmatel-diary.txt", text);
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : t("error");
+      Alert.alert(t("error"), message);
     } finally {
       setIsSharing(false);
     }
@@ -1540,7 +1543,7 @@ export default function DiaryScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={handleShare}
+            onPress={handleExport}
             disabled={isSharing || diaryEntries.length === 0}
             style={({ pressed }) => [
               styles.heroShareBtn,

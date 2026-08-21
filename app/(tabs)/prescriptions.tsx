@@ -17,15 +17,52 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { PrescriptionCard } from "@/components/PrescriptionCard";
 import { useApp } from "@/context/AppContext";
+import { exportTextFile } from "@/services/fileExport";
+
+function buildPrescriptionsText(
+  prescriptions: ReturnType<typeof useApp>["prescriptions"],
+): string {
+  let text = "PharmaTel Prescriptions\n";
+  text += `Exported: ${new Date().toLocaleDateString("en-US", { dateStyle: "full" })}\n`;
+  text += "=".repeat(40) + "\n\n";
+
+  for (const prescription of prescriptions) {
+    text += `${prescription.medicine.name}`;
+    if (prescription.medicine.strength)
+      text += ` (${prescription.medicine.strength})`;
+    text += "\n";
+    text += `Dose: ${prescription.dose}\n`;
+    text += `Frequency: ${prescription.frequency}\n`;
+    text += `Dates: ${prescription.startDate} - ${prescription.endDate ?? "ongoing"}\n`;
+    text += `Prescribed by: ${prescription.prescribedBy}\n`;
+    if (prescription.note ?? prescription.notes) {
+      text += `Notes: ${prescription.note ?? prescription.notes}\n`;
+    }
+    if (prescription.doseSchedules.length > 0) {
+      text += "Dose schedule:\n";
+      for (const dose of prescription.doseSchedules) {
+        text += `  ${dose.takeAt ?? dose.scheduledTime} - ${dose.status}\n`;
+      }
+    }
+    text += "\n";
+  }
+
+  return text;
+}
 
 export default function PrescriptionsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
   const insets = useSafeAreaInsets();
-  const { prescriptions, refreshPrescriptions, deleteUserPrescription, isLoading } =
-    useApp();
+  const {
+    prescriptions,
+    refreshPrescriptions,
+    deleteUserPrescription,
+    isLoading,
+  } = useApp();
   const { t } = useApp();
   const [refreshing, setRefreshing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const topPadding = insets.top + (Platform.OS === "web" ? 67 : 0);
 
@@ -38,27 +75,47 @@ export default function PrescriptionsScreen() {
     }
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportTextFile(
+        "pharmatel-prescriptions.txt",
+        buildPrescriptionsText(prescriptions),
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : t("error");
+      Alert.alert(t("error"), message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleDelete = (rxId: string, name: string) => {
-    Alert.alert(t("deletePrescriptionTitle"), t("deletePrescriptionMessage", { name }), [
-      { text: t("cancel"), style: "cancel" },
-      {
-        text: t("remove"),
-        style: "destructive",
-        onPress: () => {
-          void (async () => {
-            try {
-              await deleteUserPrescription(rxId);
-            } catch (error) {
-              const message =
-                error instanceof Error && error.message
-                  ? error.message
-                  : t("removePrescriptionFailed");
-              Alert.alert(t("deleteFailed"), message);
-            }
-          })();
+    Alert.alert(
+      t("deletePrescriptionTitle"),
+      t("deletePrescriptionMessage", { name }),
+      [
+        { text: t("cancel"), style: "cancel" },
+        {
+          text: t("remove"),
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await deleteUserPrescription(rxId);
+              } catch (error) {
+                const message =
+                  error instanceof Error && error.message
+                    ? error.message
+                    : t("removePrescriptionFailed");
+                Alert.alert(t("deleteFailed"), message);
+              }
+            })();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleEdit = (rxId: string) => {
@@ -81,7 +138,9 @@ export default function PrescriptionsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.loadingScreen, { backgroundColor: colors.background }]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
           {t("loading")}
@@ -111,16 +170,36 @@ export default function PrescriptionsScreen() {
               {active.length} {t("activeRx")}
             </Text>
           </View>
-          <Pressable
-            onPress={() => router.push("/prescription/new")}
-            style={({ pressed }) => [
-              styles.addBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
-            ]}
-          >
-            <Feather name="plus" size={17} color="#fff" />
-            <Text style={styles.addBtnText}>{t("addPrescription")}</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={handleExport}
+              disabled={isExporting || prescriptions.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel={t("export")}
+              style={({ pressed }) => [
+                styles.exportBtn,
+                {
+                  borderColor: colors.primary,
+                  opacity:
+                    pressed || isExporting || prescriptions.length === 0
+                      ? 0.55
+                      : 1,
+                },
+              ]}
+            >
+              <Feather name="share-2" size={18} color={colors.primary} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/prescription/new")}
+              style={({ pressed }) => [
+                styles.addBtn,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Feather name="plus" size={17} color="#fff" />
+              <Text style={styles.addBtnText}>{t("addPrescription")}</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -251,6 +330,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 0,
+  },
   title: {
     fontSize: 20,
     fontFamily: "Inter_700Bold",
@@ -270,6 +355,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginTop: 8,
+  },
+  exportBtn: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  exportBtnText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
   },
   addBtnText: {
     fontSize: 15,
