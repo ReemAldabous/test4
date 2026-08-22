@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -23,7 +23,10 @@ export function DoseAlertModal() {
     useApp();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme === "dark" ? "dark" : "light"];
-  const [loading, setLoading] = useState(false);
+  const inFlightActionRef = useRef(false);
+  const [loadingAction, setLoadingAction] = useState<
+    typeof ACTION_TAKEN | typeof ACTION_IGNORE | null
+  >(null);
 
   const notification = currentDoseNotification;
   const prescription = notification
@@ -33,13 +36,18 @@ export function DoseAlertModal() {
   const doseSchedule = prescription?.doseSchedules.find(
     (ds) => ds.id === notification?.doseScheduleId,
   );
+  const isIgnoreLoading = loadingAction === ACTION_IGNORE;
+  const isTakenLoading = loadingAction === ACTION_TAKEN;
+  const isAnyLoading = loadingAction !== null;
 
   const handleAction = async (
     action: typeof ACTION_TAKEN | typeof ACTION_IGNORE,
   ) => {
     if (!notification) return;
+    if (inFlightActionRef.current) return;
 
-    setLoading(true);
+    inFlightActionRef.current = true;
+    setLoadingAction(action);
     try {
       if (action === ACTION_TAKEN) {
         await updateDoseSchedule(
@@ -72,7 +80,8 @@ export function DoseAlertModal() {
       console.error("Error handling dose action:", error);
       Alert.alert(t("deleteFailed"), t("doseActionError"));
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
+      inFlightActionRef.current = false;
     }
   };
 
@@ -106,7 +115,7 @@ export function DoseAlertModal() {
             <Pressable
               style={styles.closeButton}
               onPress={dismissDoseNotification}
-              disabled={loading}
+              disabled={isAnyLoading}
             >
               <Feather name="x" size={24} color={colors.text} />
             </Pressable>
@@ -177,16 +186,20 @@ export function DoseAlertModal() {
                 },
               ]}
               onPress={() => handleAction(ACTION_IGNORE)}
-              disabled={loading}
+              disabled={isAnyLoading}
             >
-              <Feather name="x" size={20} color={colors.error} />
+              {isIgnoreLoading ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <Feather name="x" size={20} color={colors.error} />
+              )}
               <Text
                 style={[
                   styles.buttonText,
                   { color: colors.error, marginLeft: 8 },
                 ]}
               >
-                {t("skip")}
+                {isIgnoreLoading ? t("saving") : t("skip")}
               </Text>
             </Pressable>
 
@@ -197,9 +210,9 @@ export function DoseAlertModal() {
                 { backgroundColor: colors.primary },
               ]}
               onPress={() => handleAction(ACTION_TAKEN)}
-              disabled={loading}
+              disabled={isAnyLoading}
             >
-              {loading ? (
+              {isTakenLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Feather name="check" size={20} color="#fff" />
@@ -207,7 +220,7 @@ export function DoseAlertModal() {
               <Text
                 style={[styles.buttonText, { color: "#fff", marginLeft: 8 }]}
               >
-                {t("doseRecordedSuccess")}
+                {isTakenLoading ? t("saving") : t("doseRecordedSuccess")}
               </Text>
             </Pressable>
           </View>
