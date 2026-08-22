@@ -115,7 +115,7 @@ export default function ProfileScreen() {
           </Text>
           {patient?.dateOfBirth && (
             <Text style={styles.dob}>
-              DOB: {formatDate(patient.dateOfBirth, locale)}
+              DOB: {formatDate(patient.dateOfBirth)}
             </Text>
           )}
         </View>
@@ -172,6 +172,15 @@ export default function ProfileScreen() {
             label={t("upcomingDoses")}
             colors={colors}
             onPress={() => router.push("/(tabs)/notifications")}
+          />
+          <View
+            style={[styles.divider, { backgroundColor: colors.borderLight }]}
+          />
+          <MenuItem
+            icon="heart"
+            label={t("patientDetails")}
+            colors={colors}
+            onPress={() => router.push("/patient-details")}
           />
         </View>
 

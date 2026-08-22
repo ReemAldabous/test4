@@ -3,6 +3,11 @@ export interface Patient {
   username: string;
   name: string;
   dateOfBirth?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER" | "UNKNOWN";
+  heightCm?: number;
+  weightKg?: number;
+  diagnosis?: string;
+  allergies?: string;
   profileImageUri?: string;
   token?: string;
 }

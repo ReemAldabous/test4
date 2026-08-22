@@ -36,6 +36,8 @@ import {
   updateDoseSchedule,
   markPrescriptionDone as markPrescriptionDoneService,
   updatePrescriptionTimeShift as updatePrescriptionTimeShiftService,
+  savePatientDetails as savePatientDetailsService,
+  type PatientDetailsInput,
 } from "@/services/storage";
 import {
   cancelAllDoseNotifications,
@@ -74,6 +76,7 @@ interface AppContextValue {
   dismissDoseNotification: () => void;
   setLanguage: (language: Language) => Promise<void>;
   updatePatientProfileImage: (profileImageUri: string) => Promise<void>;
+  savePatientDetails: (input: PatientDetailsInput) => Promise<void>;
   t: (key: TranslationKey, params?: TranslationParams) => string;
   login: (
     username: string,
@@ -743,8 +746,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updatePatientProfileImage = useCallback(
     async (profileImageUri: string) => {
       if (!patient) return;
-      const updatedPatient = { ...patient, profileImageUri };
+      const updatedPatient = await savePatientDetailsService({
+        imageUri: profileImageUri,
+      });
       await AsyncStorage.setItem("patient", JSON.stringify(updatedPatient));
+      setPatient(updatedPatient);
+    },
+    [patient],
+  );
+
+  const savePatientDetails = useCallback(
+    async (input: PatientDetailsInput) => {
+      if (!patient) return;
+      const updatedPatient = await savePatientDetailsService(input);
       setPatient(updatedPatient);
     },
     [patient],
@@ -766,6 +780,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dismissDoseNotification,
         setLanguage,
         updatePatientProfileImage,
+        savePatientDetails,
         t,
         login,
         logout,

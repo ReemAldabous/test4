@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 import type {
   DiaryEntry,
   DoseSchedule,
@@ -46,6 +47,23 @@ type ApiPatientDto = {
   name: string;
   email: string;
   phoneNumber: string;
+  dateOfBirth?: string | null;
+  gender?: Patient["gender"] | null;
+  heightCm?: number | string | null;
+  weightKg?: number | string | null;
+  diagnosis?: string | null;
+  allergies?: string | null;
+  imageBase64?: string | null;
+};
+
+export type PatientDetailsInput = {
+  dateOfBirth?: string;
+  gender?: Patient["gender"];
+  heightCm?: number;
+  weightKg?: number;
+  diagnosis?: string;
+  allergies?: string;
+  imageUri?: string;
 };
 
 type ApiMedicineDto = {
@@ -175,6 +193,30 @@ type ApiObservationDto = {
 
 function isNumericId(value: string): boolean {
   return /^\d+$/.test(value);
+}
+
+async function imageUriToBase64(uri: string): Promise<string> {
+  if (uri.startsWith("data:")) {
+    return uri.split(",", 2)[1] ?? "";
+  }
+
+  try {
+    return await FileSystem.readAsStringAsync(uri, {
+      encoding: "base64",
+    });
+  } catch {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = String(reader.result ?? "");
+        resolve(result.split(",", 2)[1] ?? result);
+      };
+      reader.onerror = () => reject(new Error("Could not read image."));
+      reader.readAsDataURL(blob);
+    });
+  }
 }
 
 function extractTime(value?: string | null): string {
@@ -382,6 +424,53 @@ async function getStoredPatientId(): Promise<number | null> {
   if (!storedPatient?.id) return null;
   const parsed = Number.parseInt(storedPatient.id, 10);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+export async function savePatientDetails(
+  input: PatientDetailsInput,
+): Promise<Patient> {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Missing auth token.");
+
+  const body: Record<string, unknown> = {};
+  if (input.dateOfBirth) body.dateOfBirth = input.dateOfBirth;
+  if (input.gender) body.gender = input.gender;
+  if (input.heightCm != null) body.heightCm = input.heightCm;
+  if (input.weightKg != null) body.weightKg = input.weightKg;
+  if (input.diagnosis !== undefined) body.diagnosis = input.diagnosis;
+  if (input.allergies !== undefined) body.allergies = input.allergies;
+  if (input.imageUri) body.imageBase64 = await imageUriToBase64(input.imageUri);
+
+  const response = await requestApi<ApiPatientDto>(
+    "/patients/details",
+    { method: "POST", body: JSON.stringify(body) },
+    token,
+  );
+  const current = await getStoredPatient();
+  if (!current) throw new Error("Patient profile is unavailable.");
+
+  const updated: Patient = {
+    ...current,
+    ...(response.dateOfBirth ? { dateOfBirth: response.dateOfBirth } : {}),
+    ...(response.gender ? { gender: response.gender } : {}),
+    ...(response.heightCm != null
+      ? { heightCm: Number(response.heightCm) }
+      : {}),
+    ...(response.weightKg != null
+      ? { weightKg: Number(response.weightKg) }
+      : {}),
+    ...(response.diagnosis != null ? { diagnosis: response.diagnosis } : {}),
+    ...(response.allergies != null ? { allergies: response.allergies } : {}),
+    ...(input.dateOfBirth ? { dateOfBirth: input.dateOfBirth } : {}),
+    ...(input.gender ? { gender: input.gender } : {}),
+    ...(input.heightCm != null ? { heightCm: input.heightCm } : {}),
+    ...(input.weightKg != null ? { weightKg: input.weightKg } : {}),
+    ...(input.diagnosis !== undefined ? { diagnosis: input.diagnosis } : {}),
+    ...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
+    ...(input.imageUri ? { profileImageUri: input.imageUri } : {}),
+  };
+  await AsyncStorage.setItem(KEYS.PATIENT, JSON.stringify(updated));
+  return updated;
 }
 
 async function requestApi<T>(
